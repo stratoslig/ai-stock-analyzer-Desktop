@@ -40,8 +40,8 @@
 
 1. **Κλωνοποίηση του αποθετηρίου:**
    ```bash
-   git clone https://github.com/USERNAME/ai-stock-analyzer-pro.git
-   cd ai-stock-analyzer-pro
+   git clone https://github.com/stratoslig/ai-stock-analyzer-Desktop.git
+   cd ai-stock-analyzer-Desktop
    ```
 
 2. **Δημιουργία Εικονικού Περιβάλλοντος (Virtual Environment):**

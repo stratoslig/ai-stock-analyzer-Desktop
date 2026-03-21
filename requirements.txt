@@ -1,0 +1,12 @@
+customtkinter
+requests
+beautifulsoup4
+google-genai
+ollama
+yfinance
+python-docx
+pandas-ta
+cloudscraper
+pyinstaller
+matplotlib
+PyPDF2

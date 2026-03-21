@@ -1,0 +1,16 @@
+# Python & Εικονικά Περιβάλλοντα
+.venv/
+env/
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Αρχεία PyInstaller
+build/
+dist/
+*.spec
+
+# Προσωπικά Δεδομένα & Εξαγωγές
+user_data.json
+app_errors.log
+*.docx

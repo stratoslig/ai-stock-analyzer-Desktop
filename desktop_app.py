@@ -8,8 +8,6 @@ from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolb
 from matplotlib.figure import Figure
 import matplotlib.dates as mdates
 from matplotlib.widgets import MultiCursor
-from PIL import Image
-import io
 import requests
 import datetime
 import os
@@ -508,8 +506,6 @@ class App(ctk.CTk):
         
         title_logo_frame = ctk.CTkFrame(pane, fg_color="transparent")
         title_logo_frame.pack(anchor="w", pady=(0, 10), fill="x")
-        self.logo_label = ctk.CTkLabel(title_logo_frame, text="")
-        self.logo_label.pack(side="left", padx=(0, 10))
         self.overview_title = ctk.CTkLabel(title_logo_frame, text="Επισκόπηση Επιλεγμένης Μετοχής", font=ctk.CTkFont(size=18, weight="bold"))
         self.overview_title.pack(side="left")
         
@@ -900,7 +896,6 @@ class App(ctk.CTk):
         self.l_ft.configure(text="Φόρτωση...")
         self.l_inv.configure(text="Φόρτωση...")
         self.overview_title.configure(text=f"{selected_name} - Επισκόπηση")
-        self.logo_label.configure(image=None, text="")
         self.website_url = ""
         self.website_link_label.pack_forget()
         self.website_cb.pack_forget()
@@ -933,20 +928,9 @@ class App(ctk.CTk):
         symbols_list = [yahoo_sym, ft_sym, inv_sym]
         news_data = stock_fetcher.get_stock_news(stock_data.get("Ονομασία", yahoo_sym), symbols=symbols_list)
         
-        logo_img_bytes = None
-        if not res_yahoo.get("error") and res_yahoo.get("domain"):
-            try:
-                logo_url = f"https://logo.clearbit.com/{res_yahoo['domain']}?size=60"
-                headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)'}
-                resp = requests.get(logo_url, headers=headers, timeout=5)
-                if resp.status_code == 200:
-                    logo_img_bytes = resp.content
-            except:
-                pass
-                
-        self.after(0, self._update_overview_ui, res_yahoo, ft_price, inv_price, news_data, logo_img_bytes)
+        self.after(0, self._update_overview_ui, res_yahoo, ft_price, inv_price, news_data)
 
-    def _update_overview_ui(self, res_yahoo, ft_price, inv_price, news_data=None, logo_img_bytes=None):
+    def _update_overview_ui(self, res_yahoo, ft_price, inv_price, news_data=None):
         if not res_yahoo.get("error"):
             self.l_yahoo.configure(text=res_yahoo.get("price", "N/A"))
             self.l_mcap.configure(text=res_yahoo.get("mcap", "N/A"))
@@ -976,14 +960,6 @@ class App(ctk.CTk):
         self.l_ft.configure(text=ft_price)
         self.l_inv.configure(text=inv_price)
         
-        if logo_img_bytes:
-            try:
-                image = Image.open(io.BytesIO(logo_img_bytes))
-                self.current_logo_img = ctk.CTkImage(light_image=image, dark_image=image, size=(30, 30))
-                self.logo_label.configure(image=self.current_logo_img, text="")
-            except:
-                pass
-
         # Ενημέρωση Ειδήσεων
         for widget in self.news_frame.winfo_children():
             widget.destroy()
@@ -1745,7 +1721,6 @@ class App(ctk.CTk):
         self.current_ma_agg = None
         
         self.overview_title.configure(text="Επισκόπηση Επιλεγμένης Μετοχής")
-        self.logo_label.configure(image=None, text="")
         self.website_url = ""
         self.website_link_label.pack_forget()
         self.website_cb.pack_forget()

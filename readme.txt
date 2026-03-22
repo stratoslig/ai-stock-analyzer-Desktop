@@ -52,3 +52,46 @@ SmartScreen, πατήστε "Περισσότερες πληροφορίες" κ
 5. ΑΥΤΟΜΑΤΕΣ ΕΝΗΜΕΡΩΣΕΙΣ: Κατά την εκκίνηση, η εφαρμογή ελέγχει 
    διακριτικά για νέες εκδόσεις. Αν βρεθεί νέα έκδοση, θα ερωτηθείτε 
    αν θέλετε να μεταβείτε στη σελίδα λήψης.
+
+
+=========================================================
+      AI Stock Analyzer Desktop - Instructions & Setup
+=========================================================
+
+The AI Stock Analyzer Desktop application allows you to analyze 
+stocks using real market data, news, and Artificial Intelligence 
+(Cloud or Local models).
+
+--- [ 1. PREREQUISITES ] --------------------------------
+1. Windows Operating System (10/11).
+2. Active internet connection.
+3. (Optional but recommended) Free API Keys for:
+   - Google Gemini (For AI analysis)
+   - Alpha Vantage & Finnhub (For fundamental & live data)
+   - NewsAPI.org (For advanced news search)
+
+--- [ 2. INSTALLATION & EXECUTION ] ---------------------
+The application is portable and does not require installation.
+
+Step 1: Extract the entire downloaded folder to a location 
+of your choice (e.g., Desktop).
+
+Step 2: Double-click the file:
+  > AI Stock Analyzer Desktop.exe
+
+(Note: If Windows displays a SmartScreen security warning, 
+click "More info" and then "Run anyway").
+
+--- [ 3. BASIC USAGE INSTRUCTIONS ] ---------------------
+0. LANGUAGE SELECTION: At the top of the left menu, you can 
+   choose between Greek and English.
+1. ADD API KEYS: In the left menu, paste your API Keys 
+   and click "Save Keys".
+2. STOCK LIST (WATCHLIST): In the "Stock Management" section, 
+   fill in the details (e.g., Name: Apple, Yahoo Symbol: AAPL) 
+   and click "Save Stock".
+3. SELECTION & DATA: From the main window, select your stock, 
+   check the data sources, or attach your own files (PDF/TXT).
+4. ANALYSIS: Choose "Summary" or "Detailed" and click 
+   "Start Analysis". Export to Word (.docx) when done!
+5. AUTO-UPDATES: Upon startup, the app checks for new versions.

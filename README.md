@@ -1,6 +1,10 @@
-# 📈 AI Stock Analyzer Pro (Desktop Edition)
+[🇬🇧 English](#-english-version) | [🇬🇷 Ελληνικά](#-ελληνική-έκδοση)
 
-Το **AI Stock Analyzer Pro** είναι μια σύγχρονη Desktop εφαρμογή (Windows/macOS/Linux) γραμμένη σε Python, η οποία συνδυάζει **πραγματικά χρηματιστηριακά δεδομένα**, **τεχνικούς δείκτες** και **ειδήσεις**, χρησιμοποιώντας τη δύναμη της **Τεχνητής Νοημοσύνης (AI)** για την παραγωγή ολοκληρωμένων αναλύσεων μετοχών.
+---
+
+<h1 id="-ελληνική-έκδοση">📈 AI Stock Analyzer Desktop</h1>
+
+Το **AI Stock Analyzer Desktop** είναι μια σύγχρονη Desktop εφαρμογή (Windows/macOS/Linux) γραμμένη σε Python, η οποία συνδυάζει **πραγματικά χρηματιστηριακά δεδομένα**, **τεχνικούς δείκτες** και **ειδήσεις**, χρησιμοποιώντας τη δύναμη της **Τεχνητής Νοημοσύνης (AI)** για την παραγωγή ολοκληρωμένων αναλύσεων μετοχών.
 
 ![Python Version](https://img.shields.io/badge/python-3.8%2B-blue)
 ![License](https://img.shields.io/badge/license-MIT-green)
@@ -17,7 +21,7 @@
 <p align="center">
   <img src="assets/chart_view.png" width="390" alt="Αναλυτικό Γράφημα">
   <img src="assets/ai_analysis.png" width="390" alt="AI Report">
-  <img src="assets/dashboard.png" width="390" alt="Dashboard">
+  <img src="assets/dashboard_en.png" width="390" alt="Dashboard">
   <img src="assets/news.png" width="390" alt="News Feeds">
   <img src="assets/sites.png" width="390" alt="Sites">
 </p>
@@ -104,3 +108,83 @@ python desktop_app.py
 
 ---
 *⚠️ **Αποποίηση Ευθύνης**: Το λογισμικό αυτό προορίζεται αποκλειστικά για εκπαιδευτικούς και ενημερωτικούς σκοπούς. Σε καμία περίπτωση δεν αποτελεί επενδυτική ή οικονομική συμβουλή. Πάντα να κάνετε τη δική σας έρευνα (DYOR) πριν από κάθε επένδυση.*
+
+---
+---
+
+<h1 id="-english-version">📈 AI Stock Analyzer Desktop (English)</h1>
+
+**AI Stock Analyzer Desktop** is a modern Desktop application (Windows/macOS/Linux) written in Python that combines **real market data**, **technical indicators**, and **news**, leveraging the power of **Artificial Intelligence (AI)** to generate comprehensive stock analyses.
+
+![Python Version](https://img.shields.io/badge/python-3.8%2B-blue)
+![License](https://img.shields.io/badge/license-MIT-green)
+
+---
+
+## 📸 Screenshots
+
+<p align="center">
+  <img src="assets/main_dashboard.png" width="800" alt="Main Dashboard"><br>
+  <i>(The main interface with charts, news, and AI analysis)</i>
+</p>
+
+<p align="center">
+  <img src="assets/chart_view.png" width="390" alt="Detailed Chart">
+  <img src="assets/ai_analysis.png" width="390" alt="AI Report">
+  <img src="assets/dashboard_en.png" width="390" alt="Dashboard">
+  <img src="assets/news.png" width="390" alt="News Feeds">
+  <img src="assets/sites.png" width="390" alt="Sites">
+</p>
+
+## ✨ Key Features
+
+- **Multilingual UI (i18n)**: Full support for English and Greek, both in the UI and the generated AI reports.
+- **Instant Startup & Performance**: Utilizes *Lazy Loading* techniques for instant application launch (zero wait time) and is distributed as an extracted folder rather than a single compressed executable.
+- **Auto-Updates**: Built-in update checker via GitHub API for instant new release notifications.
+- **Modern UI**: Dark Mode theme based on `CustomTkinter` with split-scroll columns, quick clipboard paste buttons, and Focus Mode (☰).
+- **Multiple Data Sources**:
+  - *Yahoo Finance*: Historical data, prices, P/E, Market Cap.
+  - *Financial Health & Performance*: Extraction and display of metrics like Revenue Growth, ROE, Debt to Equity, and Free Cash Flow.
+  - *Alpha Vantage & Finnhub*: On-demand real-time fundamental data via API (PE, EPS, 52W High/Low, Live Prices).
+  - *NewsAPI.org*: Advanced news search (sorted by relevancy) with custom keyword, language, and date ("From") filters.
+  - *Financial Times & Investing.com*: Secondary live price sources (Web Scraping).
+- **Local Files & Articles Import**: Support for uploading local **PDF and TXT** files, along with specific textboxes for manual article pasting, which the AI reads and analyzes.
+- **Trend Analysis & Indicators**: Trend calculation based on moving averages (SMA/EMA 20/50) and RSI indicators (Overbought/Oversold).
+- **Dynamic Charts (Matplotlib)**: Professional 4-layer charts (isolated Hover Track at the top, Candlesticks with locked Y-axis limits, Volume, and RSI), with the ability to maximize in a new window.
+- **Automated News Search**: Integration with `ddgs` (DuckDuckGo) to automatically find the latest articles/news (up to 1 year) for the selected stock.
+- **Corporate Site & Custom URLs Scraping**: Automatic discovery of the corporate website and scraping of external links, with clean text extraction (via `trafilatura`) to save AI tokens.
+- **Smart API Usage Counters**: Monitoring of daily call limits for Alpha Vantage, Finnhub, and NewsAPI to prevent key blocking.
+- **Artificial Intelligence (AI)**:
+  - **Creativity Control**: Built-in *Temperature* slider (0.0 - 1.0) to adjust AI response behavior.
+  - **Google Gemini (Cloud)**: Lightning-fast analysis via Google AI Studio (API Key required).
+  - **Ollama (Local)**: Support for local, open-source LLMs (e.g., Llama 3, Mistral) for absolute privacy.
+- **History Management & Export**: Automatic saving of analyses, export to Word (.docx), Cache clearing, and a secure **Clear All Data** (Factory Reset) button.
+
+---
+
+## 🚀 Installation & Setup
+
+### Prerequisites
+- **Python 3.8** or newer.
+- *(Optional but recommended)* API Keys for **Google Gemini**, **Alpha Vantage**, **Finnhub**, and **NewsAPI.org**.
+- *(Optional)* Installed Ollama if you wish to run models locally.
+
+### Execution
+1. **Clone the repository:** `git clone https://github.com/stratoslig/ai-stock-analyzer-Desktop.git`
+2. **Create a Virtual Environment:** `python -m venv venv` and activate it.
+3. **Install libraries:** `pip install -r requirements.txt`
+4. **Run the app:** `python desktop_app.py`
+
+---
+
+## 📂 Project Structure
+- `desktop_app.py`: The main GUI file using CustomTkinter and Matplotlib.
+- `translations.py`: Application dictionary for multilingual (i18n) support.
+- `stock_fetcher.py`: Data management, web scraping and APIs (Yahoo, Alpha Vantage, Finnhub).
+- `ai_service.py`: Management of LLMs (Google Gemini, Ollama) and generation of the analysis.
+- `data_manager.py`: Secure loading and saving of user settings (`user_data.json`).
+- `document_exporter.py`: Exporting the generated AI report to a Word document (.docx).
+- `ARCHITECTURE.md`: Detailed technical description of the code architecture.
+
+---
+*⚠️ **Disclaimer**: This software is intended strictly for educational and informational purposes. Under no circumstances does it constitute investment or financial advice. Always Do Your Own Research (DYOR) before making any investment.*

@@ -90,6 +90,7 @@ class App(ctk.CTk):
         self._sync_api_usage()
 
         self.title("AI Stock Analyzer Pro")
+        self.title("AI Stock Analyzer Desktop")
         self.geometry("1200x900")
         
         try:
@@ -240,6 +241,7 @@ class App(ctk.CTk):
         self.toggle_sidebar_btn = ctk.CTkButton(header_frame, text="☰", width=40, font=ctk.CTkFont(size=20), command=self.toggle_sidebar)
         self.toggle_sidebar_btn.pack(side="left", padx=(0, 10))
         title_lbl = ctk.CTkLabel(header_frame, text="📈 AI Stock Analyzer Pro", font=ctk.CTkFont(size=24, weight="bold"))
+        title_lbl = ctk.CTkLabel(header_frame, text="📈 AI Stock Analyzer Desktop", font=ctk.CTkFont(size=24, weight="bold"))
         title_lbl.pack(side="left")
 
         self.about_btn = ctk.CTkButton(header_frame, text="ℹ️ Σχετικά", width=80, fg_color="transparent", border_width=1, text_color="gray", hover_color="#333", command=self.show_about_window)
@@ -269,6 +271,7 @@ class App(ctk.CTk):
         about_win.grab_set()      # "Κλειδώνει" το κεντρικό παράθυρο μέχρι να κλείσει το About
 
         ctk.CTkLabel(about_win, text="📈 AI Stock Analyzer Pro", font=ctk.CTkFont(size=20, weight="bold")).pack(pady=(20, 5))
+        ctk.CTkLabel(about_win, text="📈 AI Stock Analyzer Desktop", font=ctk.CTkFont(size=20, weight="bold")).pack(pady=(20, 5))
         ctk.CTkLabel(about_win, text="Έκδοση 1.1", font=ctk.CTkFont(size=12), text_color="gray").pack(pady=(0, 5))
         ctk.CTkLabel(about_win, text="Δημιουργός: Stratos Ligoudis", font=ctk.CTkFont(size=13, slant="italic", weight="bold"), text_color="#1f77b4").pack(pady=(0, 10))
 

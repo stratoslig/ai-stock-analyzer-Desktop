@@ -24,11 +24,18 @@ def fetch_models(provider, api_key=None):
         logger.error(f"Σφάλμα φόρτωσης μοντέλων ({provider}): {e}", exc_info=True)
         return ["Σφάλμα φόρτωσης"]
 
-def generate_analysis(provider, model, name, context, api_key=None, temperature=0.7, extra_prompt=""):
+def generate_analysis(provider, model, name, context, api_key=None, temperature=0.7, extra_prompt="", lang="el"):
     """Εκτελεί την ανάλυση στο επιλεγμένο AI."""
-    prompt = f"Είσαι επαγγελματίας οικονομικός αναλυτής. Ανέλυσε τη μετοχή {name} με βάση τα παρακάτω δεδομένα:\n{context}"
+    if lang == "en":
+        prompt = f"You are a professional financial analyst. Analyze the stock {name} based on the following data:\n{context}"
+    else:
+        prompt = f"Είσαι επαγγελματίας οικονομικός αναλυτής. Ανέλυσε τη μετοχή {name} με βάση τα παρακάτω δεδομένα:\n{context}"
+        
     if extra_prompt:
-        prompt += f"\n\nΕπιπλέον Οδηγίες (System Prompt):\n{extra_prompt}"
+        if lang == "en":
+            prompt += f"\n\nAdditional Instructions (System Prompt):\n{extra_prompt}"
+        else:
+            prompt += f"\n\nΕπιπλέον Οδηγίες (System Prompt):\n{extra_prompt}"
     try:
         if provider == "Gemini (Cloud)":
             if not api_key:

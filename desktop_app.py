@@ -21,6 +21,7 @@ from data_manager import load_data, save_data
 import stock_fetcher
 import ai_service
 import document_exporter
+from translations import TRANSLATIONS
 
 logging.basicConfig(
     filename="app_errors.log",
@@ -70,6 +71,8 @@ class App(ctk.CTk):
     def __init__(self):
         super().__init__()
         self.user_data = load_data()
+        if "language" not in self.user_data:
+            self.user_data["language"] = "el"
         self.current_av_context = ""
         self.current_fh_context = ""
         self.page_checkboxes = []
@@ -89,7 +92,6 @@ class App(ctk.CTk):
 
         self._sync_api_usage()
 
-        self.title("AI Stock Analyzer Pro")
         self.title("AI Stock Analyzer Desktop")
         self.geometry("1200x900")
         
@@ -97,7 +99,7 @@ class App(ctk.CTk):
             self.iconbitmap(resource_path("icon.ico"))
             # Ενημέρωση των Windows για εμφάνιση του σωστού εικονιδίου στη γραμμή εργασιών (Taskbar)
             import ctypes
-            myappid = 'aistockanalyzer.pro.desktop.1.1'
+            myappid = 'aistockanalyzer.pro.desktop.1.2'
             ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(myappid)
         except Exception:
             pass
@@ -109,33 +111,38 @@ class App(ctk.CTk):
         # --- ΠΛΕΥΡΙΚΗ ΜΠΑΡΑ ---
         self.sidebar_frame = ctk.CTkScrollableFrame(self, width=380, corner_radius=0)
         self.sidebar_frame.grid(row=0, column=0, sticky="nsew")
-        self.sidebar_frame.grid_rowconfigure(19, weight=1)
+        self.sidebar_frame.grid_rowconfigure(21, weight=1)
         self.sidebar_frame.grid_columnconfigure(0, weight=1)
 
-        ctk.CTkLabel(self.sidebar_frame, text="Πάροχος AI", font=ctk.CTkFont(size=12, weight="bold")).grid(row=0, column=0, padx=20, pady=(15, 0), sticky="w")
+        ctk.CTkLabel(self.sidebar_frame, text=self.tr("language"), font=ctk.CTkFont(size=12, weight="bold")).grid(row=0, column=0, padx=20, pady=(15, 0), sticky="w")
+        self.lang_var = ctk.StringVar(value="Ελληνικά" if self.user_data.get("language", "el") == "el" else "English")
+        self.lang_menu = ctk.CTkOptionMenu(self.sidebar_frame, variable=self.lang_var, values=["Ελληνικά", "English"], command=self.change_language)
+        self.lang_menu.grid(row=1, column=0, padx=20, pady=5, sticky="ew")
+
+        ctk.CTkLabel(self.sidebar_frame, text=self.tr("ai_provider"), font=ctk.CTkFont(size=12, weight="bold")).grid(row=2, column=0, padx=20, pady=(10, 0), sticky="w")
         self.ai_provider_menu = ctk.CTkOptionMenu(self.sidebar_frame, values=["Gemini (Cloud)", "Ollama (Τοπικά)"], command=self.update_models)
-        self.ai_provider_menu.grid(row=1, column=0, padx=20, pady=5, sticky="ew")
+        self.ai_provider_menu.grid(row=3, column=0, padx=20, pady=5, sticky="ew")
 
         temp_frame = ctk.CTkFrame(self.sidebar_frame, fg_color="transparent")
-        temp_frame.grid(row=2, column=0, padx=20, pady=(5, 0), sticky="ew")
-        ctk.CTkLabel(temp_frame, text="Temperature (Δημιουργικότητα)", font=ctk.CTkFont(size=12, weight="bold")).pack(side="left")
+        temp_frame.grid(row=4, column=0, padx=20, pady=(5, 0), sticky="ew")
+        ctk.CTkLabel(temp_frame, text=self.tr("temperature"), font=ctk.CTkFont(size=12, weight="bold")).pack(side="left")
         self.temp_val_label = ctk.CTkLabel(temp_frame, text="0.7", font=ctk.CTkFont(size=12))
         self.temp_val_label.pack(side="right")
         
         self.temperature_slider = ctk.CTkSlider(self.sidebar_frame, from_=0.0, to=1.0, number_of_steps=10, command=self.update_temp_label)
         self.temperature_slider.set(0.7)
-        self.temperature_slider.grid(row=3, column=0, padx=20, pady=5, sticky="ew")
-        ToolTip(self.temperature_slider, "0.0: Αυστηρό/Συγκεκριμένο\n1.0: Δημιουργικό/Ποικίλο")
+        self.temperature_slider.grid(row=5, column=0, padx=20, pady=5, sticky="ew")
+        ToolTip(self.temperature_slider, self.tr("tt_temp"))
 
-        ctk.CTkLabel(self.sidebar_frame, text="Εγκατεστημένα Μοντέλα", font=ctk.CTkFont(size=12, weight="bold")).grid(row=4, column=0, padx=20, pady=(5, 0), sticky="w")
+        ctk.CTkLabel(self.sidebar_frame, text=self.tr("installed_models"), font=ctk.CTkFont(size=12, weight="bold")).grid(row=6, column=0, padx=20, pady=(5, 0), sticky="w")
         self.ai_model_var = ctk.StringVar(value="Φόρτωση...")
         self.ai_model_menu = ctk.CTkOptionMenu(self.sidebar_frame, variable=self.ai_model_var, values=["Φόρτωση..."])
-        self.ai_model_menu.grid(row=5, column=0, padx=20, pady=5, sticky="ew")
+        self.ai_model_menu.grid(row=7, column=0, padx=20, pady=5, sticky="ew")
 
-        ctk.CTkLabel(self.sidebar_frame, text="🔑 API Keys", font=ctk.CTkFont(size=14, weight="bold")).grid(row=6, column=0, padx=20, pady=(10, 0), sticky="w")
+        ctk.CTkLabel(self.sidebar_frame, text=self.tr("api_keys"), font=ctk.CTkFont(size=14, weight="bold")).grid(row=8, column=0, padx=20, pady=(10, 0), sticky="w")
         
         f_api1 = ctk.CTkFrame(self.sidebar_frame, fg_color="transparent")
-        f_api1.grid(row=7, column=0, padx=20, pady=2, sticky="ew")
+        f_api1.grid(row=9, column=0, padx=20, pady=2, sticky="ew")
         ctk.CTkLabel(f_api1, text="Gemini API Key:", font=ctk.CTkFont(size=11), text_color="gray").pack(anchor="w")
         row_api1 = ctk.CTkFrame(f_api1, fg_color="transparent")
         row_api1.pack(fill="x")
@@ -143,10 +150,10 @@ class App(ctk.CTk):
         self.api_key_entry.pack(side="left", fill="x", expand=True)
         self.api_key_entry.insert(0, self.user_data.get("api_key", ""))
         ctk.CTkButton(row_api1, text="📋", width=25, fg_color="#444", hover_color="#555", command=lambda: self.paste_to_entry(self.api_key_entry)).pack(side="right", padx=(5, 0))
-        ToolTip(self.api_key_entry, "Το κλειδί για το Google Gemini API")
+        ToolTip(self.api_key_entry, self.tr("tt_api_gemini"))
 
         f_api2 = ctk.CTkFrame(self.sidebar_frame, fg_color="transparent")
-        f_api2.grid(row=8, column=0, padx=20, pady=2, sticky="ew")
+        f_api2.grid(row=10, column=0, padx=20, pady=2, sticky="ew")
         ctk.CTkLabel(f_api2, text="Alpha Vantage Key:", font=ctk.CTkFont(size=11), text_color="gray").pack(anchor="w")
         row_api2 = ctk.CTkFrame(f_api2, fg_color="transparent")
         row_api2.pack(fill="x")
@@ -154,10 +161,10 @@ class App(ctk.CTk):
         self.av_key_entry.pack(side="left", fill="x", expand=True)
         self.av_key_entry.insert(0, self.user_data.get("av_api_key", ""))
         ctk.CTkButton(row_api2, text="📋", width=25, fg_color="#444", hover_color="#555", command=lambda: self.paste_to_entry(self.av_key_entry)).pack(side="right", padx=(5, 0))
-        ToolTip(self.av_key_entry, "Κλειδί για Alpha Vantage (Θεμελιώδη)")
+        ToolTip(self.av_key_entry, self.tr("tt_api_av"))
 
         f_api3 = ctk.CTkFrame(self.sidebar_frame, fg_color="transparent")
-        f_api3.grid(row=9, column=0, padx=20, pady=2, sticky="ew")
+        f_api3.grid(row=11, column=0, padx=20, pady=2, sticky="ew")
         ctk.CTkLabel(f_api3, text="Finnhub Key:", font=ctk.CTkFont(size=11), text_color="gray").pack(anchor="w")
         row_api3 = ctk.CTkFrame(f_api3, fg_color="transparent")
         row_api3.pack(fill="x")
@@ -165,10 +172,10 @@ class App(ctk.CTk):
         self.finnhub_key_entry.pack(side="left", fill="x", expand=True)
         self.finnhub_key_entry.insert(0, self.user_data.get("finnhub_api_key", ""))
         ctk.CTkButton(row_api3, text="📋", width=25, fg_color="#444", hover_color="#555", command=lambda: self.paste_to_entry(self.finnhub_key_entry)).pack(side="right", padx=(5, 0))
-        ToolTip(self.finnhub_key_entry, "Κλειδί για Finnhub (Live Τιμές)")
+        ToolTip(self.finnhub_key_entry, self.tr("tt_api_fh"))
 
         f_api4 = ctk.CTkFrame(self.sidebar_frame, fg_color="transparent")
-        f_api4.grid(row=10, column=0, padx=20, pady=2, sticky="ew")
+        f_api4.grid(row=12, column=0, padx=20, pady=2, sticky="ew")
         ctk.CTkLabel(f_api4, text="NewsAPI Key:", font=ctk.CTkFont(size=11), text_color="gray").pack(anchor="w")
         row_api4 = ctk.CTkFrame(f_api4, fg_color="transparent")
         row_api4.pack(fill="x")
@@ -176,55 +183,55 @@ class App(ctk.CTk):
         self.newsapi_key_entry.pack(side="left", fill="x", expand=True)
         self.newsapi_key_entry.insert(0, self.user_data.get("newsapi_key", ""))
         ctk.CTkButton(row_api4, text="📋", width=25, fg_color="#444", hover_color="#555", command=lambda: self.paste_to_entry(self.newsapi_key_entry)).pack(side="right", padx=(5, 0))
-        ToolTip(self.newsapi_key_entry, "Κλειδί για NewsAPI.org (Ειδήσεις)")
+        ToolTip(self.newsapi_key_entry, self.tr("tt_api_news"))
 
-        self.save_settings_btn = ctk.CTkButton(self.sidebar_frame, text="💾 Αποθήκευση Κλειδιών", command=self.save_keys, fg_color="#2b2b2b", hover_color="#3b3b3b")
-        self.save_settings_btn.grid(row=11, column=0, padx=20, pady=(5, 10), sticky="ew")
+        self.save_settings_btn = ctk.CTkButton(self.sidebar_frame, text=self.tr("save_keys"), command=self.save_keys, fg_color="#2b2b2b", hover_color="#3b3b3b")
+        self.save_settings_btn.grid(row=13, column=0, padx=20, pady=(5, 10), sticky="ew")
 
-        ctk.CTkLabel(self.sidebar_frame, text="📈 Διαχείριση Μετοχής", font=ctk.CTkFont(size=14, weight="bold")).grid(row=12, column=0, padx=20, pady=(10, 0), sticky="w")
+        ctk.CTkLabel(self.sidebar_frame, text=self.tr("stock_management"), font=ctk.CTkFont(size=14, weight="bold")).grid(row=14, column=0, padx=20, pady=(10, 0), sticky="w")
 
         f_stk1 = ctk.CTkFrame(self.sidebar_frame, fg_color="transparent")
-        f_stk1.grid(row=13, column=0, padx=20, pady=2, sticky="ew")
-        self.stock_name_entry = ctk.CTkEntry(f_stk1, placeholder_text="Ονομασία Μετοχής")
+        f_stk1.grid(row=15, column=0, padx=20, pady=2, sticky="ew")
+        self.stock_name_entry = ctk.CTkEntry(f_stk1, placeholder_text=self.tr("stock_name"))
         self.stock_name_entry.pack(side="left", fill="x", expand=True)
         ctk.CTkButton(f_stk1, text="📋", width=25, fg_color="#444", hover_color="#555", command=lambda: self.paste_to_entry(self.stock_name_entry)).pack(side="right", padx=(5, 0))
         
         f_stk2 = ctk.CTkFrame(self.sidebar_frame, fg_color="transparent")
-        f_stk2.grid(row=14, column=0, padx=20, pady=2, sticky="ew")
+        f_stk2.grid(row=16, column=0, padx=20, pady=2, sticky="ew")
         self.stock_yahoo_entry = ctk.CTkEntry(f_stk2, placeholder_text="Yahoo Symbol")
         self.stock_yahoo_entry.pack(side="left", fill="x", expand=True)
         ctk.CTkButton(f_stk2, text="📋", width=25, fg_color="#444", hover_color="#555", command=lambda: self.paste_to_entry(self.stock_yahoo_entry)).pack(side="right", padx=(5, 0))
         
         f_stk3 = ctk.CTkFrame(self.sidebar_frame, fg_color="transparent")
-        f_stk3.grid(row=15, column=0, padx=20, pady=2, sticky="ew")
+        f_stk3.grid(row=17, column=0, padx=20, pady=2, sticky="ew")
         self.stock_ft_entry = ctk.CTkEntry(f_stk3, placeholder_text="Financial Times Symbol")
         self.stock_ft_entry.pack(side="left", fill="x", expand=True)
         ctk.CTkButton(f_stk3, text="📋", width=25, fg_color="#444", hover_color="#555", command=lambda: self.paste_to_entry(self.stock_ft_entry)).pack(side="right", padx=(5, 0))
         
         f_stk4 = ctk.CTkFrame(self.sidebar_frame, fg_color="transparent")
-        f_stk4.grid(row=16, column=0, padx=20, pady=2, sticky="ew")
+        f_stk4.grid(row=18, column=0, padx=20, pady=2, sticky="ew")
         self.stock_inv_entry = ctk.CTkEntry(f_stk4, placeholder_text="Investing.com Symbol")
         self.stock_inv_entry.pack(side="left", fill="x", expand=True)
         ctk.CTkButton(f_stk4, text="📋", width=25, fg_color="#444", hover_color="#555", command=lambda: self.paste_to_entry(self.stock_inv_entry)).pack(side="right", padx=(5, 0))
         
-        self.save_stock_btn = ctk.CTkButton(self.sidebar_frame, text="💾 Αποθήκευση Μετοχής", command=self.save_stock, fg_color="#2b2b2b", hover_color="#3b3b3b")
-        self.save_stock_btn.grid(row=17, column=0, padx=20, pady=(5, 10), sticky="ew")
+        self.save_stock_btn = ctk.CTkButton(self.sidebar_frame, text=self.tr("save_stock"), command=self.save_stock, fg_color="#2b2b2b", hover_color="#3b3b3b")
+        self.save_stock_btn.grid(row=19, column=0, padx=20, pady=(5, 10), sticky="ew")
 
-        ctk.CTkLabel(self.sidebar_frame, text="⭐ Watchlist Μετοχών", font=ctk.CTkFont(size=14, weight="bold")).grid(row=18, column=0, padx=20, pady=(10, 5), sticky="w")
+        ctk.CTkLabel(self.sidebar_frame, text=self.tr("watchlist"), font=ctk.CTkFont(size=14, weight="bold")).grid(row=20, column=0, padx=20, pady=(10, 5), sticky="w")
 
         self.watchlist_frame = ctk.CTkScrollableFrame(self.sidebar_frame, height=320)
-        self.watchlist_frame.grid(row=19, column=0, padx=10, pady=(0, 10), sticky="nsew")
+        self.watchlist_frame.grid(row=21, column=0, padx=10, pady=(0, 10), sticky="nsew")
         
-        self.clear_cache_btn = ctk.CTkButton(self.sidebar_frame, text="🧹 Εκκαθάριση Cache Δεδομένων", fg_color="transparent", border_width=1, text_color="gray", command=self.clear_cache)
-        self.clear_cache_btn.grid(row=20, column=0, padx=20, pady=10, sticky="ew")
-        ToolTip(self.clear_cache_btn, "Καθαρίζει τα προσωρινά δεδομένα (Γραφήματα/Τιμές)\nΔιατηρεί το ιστορικό ανέπαφο.")
+        self.clear_cache_btn = ctk.CTkButton(self.sidebar_frame, text=self.tr("clear_cache"), fg_color="transparent", border_width=1, text_color="gray", command=self.clear_cache)
+        self.clear_cache_btn.grid(row=22, column=0, padx=20, pady=10, sticky="ew")
+        ToolTip(self.clear_cache_btn, self.tr("tt_clear_cache"))
 
-        self.clear_all_data_btn = ctk.CTkButton(self.sidebar_frame, text="🗑️ Εκκαθάριση Όλων των Δεδομένων", fg_color="transparent", border_width=1, text_color="#d9534f", hover_color="#3b1a1a", command=self.clear_all_data)
-        self.clear_all_data_btn.grid(row=21, column=0, padx=20, pady=(0, 10), sticky="ew")
-        ToolTip(self.clear_all_data_btn, "Διαγράφει ΟΛΑ τα δεδομένα (Ιστορικό, Watchlist, API Keys, URLs).\nΗ εφαρμογή θα επανέλθει στην αρχική της κατάσταση.")
+        self.clear_all_data_btn = ctk.CTkButton(self.sidebar_frame, text=self.tr("clear_all"), fg_color="transparent", border_width=1, text_color="#d9534f", hover_color="#3b1a1a", command=self.clear_all_data)
+        self.clear_all_data_btn.grid(row=23, column=0, padx=20, pady=(0, 10), sticky="ew")
+        ToolTip(self.clear_all_data_btn, self.tr("tt_clear_all"))
 
         self.status_label = ctk.CTkLabel(self.sidebar_frame, text="", text_color="green")
-        self.status_label.grid(row=22, column=0, pady=(0, 10))
+        self.status_label.grid(row=24, column=0, pady=(0, 10))
 
         self.update_watchlist_table()
 
@@ -240,11 +247,10 @@ class App(ctk.CTk):
         
         self.toggle_sidebar_btn = ctk.CTkButton(header_frame, text="☰", width=40, font=ctk.CTkFont(size=20), command=self.toggle_sidebar)
         self.toggle_sidebar_btn.pack(side="left", padx=(0, 10))
-        title_lbl = ctk.CTkLabel(header_frame, text="📈 AI Stock Analyzer Pro", font=ctk.CTkFont(size=24, weight="bold"))
         title_lbl = ctk.CTkLabel(header_frame, text="📈 AI Stock Analyzer Desktop", font=ctk.CTkFont(size=24, weight="bold"))
         title_lbl.pack(side="left")
 
-        self.about_btn = ctk.CTkButton(header_frame, text="ℹ️ Σχετικά", width=80, fg_color="transparent", border_width=1, text_color="gray", hover_color="#333", command=self.show_about_window)
+        self.about_btn = ctk.CTkButton(header_frame, text=self.tr("about_btn"), width=80, fg_color="transparent", border_width=1, text_color="gray", hover_color="#333", command=self.show_about_window)
         self.about_btn.pack(side="right", padx=10)
 
         self.left_scroll_frame = ctk.CTkScrollableFrame(self.main_container, fg_color="transparent")
@@ -264,26 +270,34 @@ class App(ctk.CTk):
 
     def show_about_window(self):
         about_win = ctk.CTkToplevel(self)
-        about_win.title("Σχετικά")
+        about_win.title(self.tr("about_title"))
         about_win.geometry("450x320")
         about_win.resizable(False, False)
         about_win.transient(self) # Το κρατάει μπροστά από το κεντρικό παράθυρο
         about_win.grab_set()      # "Κλειδώνει" το κεντρικό παράθυρο μέχρι να κλείσει το About
 
-        ctk.CTkLabel(about_win, text="📈 AI Stock Analyzer Pro", font=ctk.CTkFont(size=20, weight="bold")).pack(pady=(20, 5))
         ctk.CTkLabel(about_win, text="📈 AI Stock Analyzer Desktop", font=ctk.CTkFont(size=20, weight="bold")).pack(pady=(20, 5))
-        ctk.CTkLabel(about_win, text="Έκδοση 1.1", font=ctk.CTkFont(size=12), text_color="gray").pack(pady=(0, 5))
-        ctk.CTkLabel(about_win, text="Δημιουργός: Stratos Ligoudis", font=ctk.CTkFont(size=13, slant="italic", weight="bold"), text_color="#1f77b4").pack(pady=(0, 10))
+        ctk.CTkLabel(about_win, text=self.tr("about_version"), font=ctk.CTkFont(size=12), text_color="gray").pack(pady=(0, 5))
+        ctk.CTkLabel(about_win, text=self.tr("about_creator"), font=ctk.CTkFont(size=13, slant="italic", weight="bold"), text_color="#1f77b4").pack(pady=(0, 10))
 
-        desc = ("Μια εφαρμογή που συνδυάζει πραγματικά χρηματιστηριακά δεδομένα, "
-                "ειδήσεις και Τεχνητή Νοημοσύνη (Cloud & Τοπικά μοντέλα) "
-                "για την παραγωγή ολοκληρωμένων αναλύσεων μετοχών.")
+        desc = self.tr("about_desc")
         ctk.CTkLabel(about_win, text=desc, wraplength=400, justify="center").pack(pady=10, padx=20)
 
-        disclaimer = "⚠️ Αποποίηση Ευθύνης: Το λογισμικό προορίζεται αποκλειστικά για εκπαιδευτικούς σκοπούς και δεν αποτελεί επενδυτική συμβουλή."
+        disclaimer = self.tr("about_disclaimer")
         ctk.CTkLabel(about_win, text=disclaimer, wraplength=400, justify="center", font=ctk.CTkFont(size=11, slant="italic"), text_color="#d9534f").pack(pady=(10, 20))
 
-        ctk.CTkButton(about_win, text="Κλείσιμο", command=about_win.destroy, width=100, fg_color="#444", hover_color="#555").pack(pady=(10, 20))
+        ctk.CTkButton(about_win, text=self.tr("close_btn"), command=about_win.destroy, width=100, fg_color="#444", hover_color="#555").pack(pady=(10, 20))
+
+    def tr(self, key):
+        lang = self.user_data.get("language", "el")
+        return TRANSLATIONS.get(lang, TRANSLATIONS["el"]).get(key, key)
+        
+    def change_language(self, choice):
+        new_lang = "en" if choice == "English" else "el"
+        if self.user_data.get("language") != new_lang:
+            self.user_data["language"] = new_lang
+            save_data(self.user_data)
+            messagebox.showinfo("Επανεκκίνηση / Restart", "Παρακαλώ κάντε επανεκκίνηση της εφαρμογής (κλείσιμο και άνοιγμα) για να εφαρμοστεί πλήρως η αλλαγή γλώσσας.\n\nPlease restart the application to fully apply the language change.")
 
     def _sync_api_usage(self):
         """Συγχρονίζει τη χρήση των API. Μηδενίζει αυτόματα αν άλλαξε η μέρα."""
@@ -296,13 +310,13 @@ class App(ctk.CTk):
         
         if hasattr(self, 'cb_av'):
             av_rem = max(0, 25 - usage.get("av", 0))
-            self.cb_av.configure(text=f"Ενσωμάτωση Δεδομένων Alpha Vantage (Υπόλοιπο: {av_rem}/25)")
+            self.cb_av.configure(text=f"{self.tr('include_av')}{av_rem}/25)")
         if hasattr(self, 'cb_fh'):
             fh_rem = max(0, 60 - usage.get("fh", 0))
-            self.cb_fh.configure(text=f"Ενσωμάτωση Δεδομένων Finnhub (Υπόλοιπο: {fh_rem}/60)")
+            self.cb_fh.configure(text=f"{self.tr('include_fh')}{fh_rem}/60)")
         if hasattr(self, 'cb_newsapi'):
             newsapi_rem = max(0, 100 - usage.get("newsapi", 0))
-            self.cb_newsapi.configure(text=f"Ενσωμάτωση Δεδομένων NewsAPI (Υπόλοιπο: {newsapi_rem}/100)")
+            self.cb_newsapi.configure(text=f"{self.tr('include_newsapi')}{newsapi_rem}/100)")
 
     def toggle_sidebar(self):
         if self.sidebar_frame.winfo_viewable():
@@ -334,17 +348,17 @@ class App(ctk.CTk):
         pane = ctk.CTkFrame(self.left_scroll_frame)
         pane.grid(row=row, column=col, padx=(20, 10), pady=10, sticky="nsew")
         
-        ctk.CTkLabel(pane, text="📊 Δεδομένα", font=ctk.CTkFont(size=16, weight="bold")).pack(anchor="w", padx=15, pady=(15, 5))
+        ctk.CTkLabel(pane, text=self.tr("data_title"), font=ctk.CTkFont(size=16, weight="bold")).pack(anchor="w", padx=15, pady=(15, 5))
         
-        ctk.CTkLabel(pane, text="Επιλογή / Αναζήτηση Μετοχής", font=ctk.CTkFont(size=12)).pack(anchor="w", padx=15)
+        ctk.CTkLabel(pane, text=self.tr("select_stock"), font=ctk.CTkFont(size=12)).pack(anchor="w", padx=15)
         
         stock_ctrl_frame = ctk.CTkFrame(pane, fg_color="transparent")
         stock_ctrl_frame.pack(fill="x", padx=15, pady=(0, 15))
-        self.stock_var = ctk.StringVar(value="Επίλεξε Μετοχή...")
-        self.stock_menu = ctk.CTkOptionMenu(stock_ctrl_frame, variable=self.stock_var, values=["Επίλεξε Μετοχή..."], command=self.on_stock_select)
+        self.stock_var = ctk.StringVar(value=self.tr("choose_stock_default"))
+        self.stock_menu = ctk.CTkOptionMenu(stock_ctrl_frame, variable=self.stock_var, values=[self.tr("choose_stock_default")], command=self.on_stock_select)
         self.stock_menu.pack(side="left", fill="x", expand=True)
         
-        ctk.CTkLabel(pane, text="🔗 Αποθηκευμένα URLs", font=ctk.CTkFont(size=14, weight="bold")).pack(anchor="w", padx=15, pady=(10, 5))
+        ctk.CTkLabel(pane, text=self.tr("saved_urls"), font=ctk.CTkFont(size=14, weight="bold")).pack(anchor="w", padx=15, pady=(10, 5))
         self.urls_frame = ctk.CTkScrollableFrame(pane, height=150)
         self.urls_frame.pack(fill="x", padx=15, pady=5)
         
@@ -355,10 +369,10 @@ class App(ctk.CTk):
         url_btns_frame = ctk.CTkFrame(pane, fg_color="transparent")
         url_btns_frame.pack(anchor="w", padx=15, pady=2)
         
-        self.add_url_btn = ctk.CTkButton(url_btns_frame, text="➕ Προσθήκη URL", width=120, command=lambda: self.add_url_row("", ""))
+        self.add_url_btn = ctk.CTkButton(url_btns_frame, text=self.tr("add_url"), width=120, command=lambda: self.add_url_row("", ""))
         self.add_url_btn.pack(side="left", padx=(0, 5))
         
-        self.save_urls_btn = ctk.CTkButton(url_btns_frame, text="💾 Αποθήκευση URLs", width=140, fg_color="#2b2b2b", hover_color="#3b3b3b", command=self.save_urls)
+        self.save_urls_btn = ctk.CTkButton(url_btns_frame, text=self.tr("save_urls"), width=140, fg_color="#2b2b2b", hover_color="#3b3b3b", command=self.save_urls)
         self.save_urls_btn.pack(side="left")
             
         usage = self.user_data.get("api_usage", {})
@@ -367,55 +381,55 @@ class App(ctk.CTk):
         newsapi_rem = max(0, 100 - usage.get("newsapi", 0))
             
         self.av_var = ctk.IntVar(value=0)
-        self.cb_av = ctk.CTkCheckBox(pane, text=f"Ενσωμάτωση Δεδομένων Alpha Vantage (Υπόλοιπο: {av_rem}/25)", variable=self.av_var, command=self.on_av_toggle)
+        self.cb_av = ctk.CTkCheckBox(pane, text=f"{self.tr('include_av')}{av_rem}/25)", variable=self.av_var, command=self.on_av_toggle)
         self.cb_av.pack(anchor="w", padx=15, pady=8)
-        ToolTip(self.cb_av, "Προσθέτει τα θεμελιώδη δεδομένα στο Prompt")
+        ToolTip(self.cb_av, self.tr("tt_cb_av"))
         
         self.fh_var = ctk.IntVar(value=0)
-        self.cb_fh = ctk.CTkCheckBox(pane, text=f"Ενσωμάτωση Δεδομένων Finnhub (Υπόλοιπο: {fh_rem}/60)", variable=self.fh_var, command=self.on_fh_toggle)
+        self.cb_fh = ctk.CTkCheckBox(pane, text=f"{self.tr('include_fh')}{fh_rem}/60)", variable=self.fh_var, command=self.on_fh_toggle)
         self.cb_fh.pack(anchor="w", padx=15, pady=8)
-        ToolTip(self.cb_fh, "Προσθέτει τα δεδομένα από το Finnhub στο Prompt")
+        ToolTip(self.cb_fh, self.tr("tt_cb_fh"))
 
         self.newsapi_var = ctk.IntVar(value=0)
-        self.cb_newsapi = ctk.CTkCheckBox(pane, text=f"Ενσωμάτωση Δεδομένων NewsAPI (Υπόλοιπο: {newsapi_rem}/100)", variable=self.newsapi_var, command=self.on_newsapi_toggle)
+        self.cb_newsapi = ctk.CTkCheckBox(pane, text=f"{self.tr('include_newsapi')}{newsapi_rem}/100)", variable=self.newsapi_var, command=self.on_newsapi_toggle)
         self.cb_newsapi.pack(anchor="w", padx=15, pady=(8, 2))
-        ToolTip(self.cb_newsapi, "Κατεβάζει επιπλέον ειδήσεις από το NewsAPI.org")
+        ToolTip(self.cb_newsapi, self.tr("tt_cb_newsapi"))
         
         self.newsapi_filters_frame = ctk.CTkFrame(pane, fg_color="transparent")
         self.newsapi_filters_frame.pack(fill="x", padx=35, pady=(0, 8))
-        self.newsapi_q_entry = ctk.CTkEntry(self.newsapi_filters_frame, placeholder_text="Λέξη-κλειδί (π.χ. AI)", width=100, height=24, font=ctk.CTkFont(size=11))
+        self.newsapi_q_entry = ctk.CTkEntry(self.newsapi_filters_frame, placeholder_text=self.tr("newsapi_ph_q"), width=100, height=24, font=ctk.CTkFont(size=11))
         self.newsapi_q_entry.pack(side="left", padx=(0, 5))
-        self.newsapi_lang_entry = ctk.CTkEntry(self.newsapi_filters_frame, placeholder_text="Γλώσσα (π.χ. en)", width=70, height=24, font=ctk.CTkFont(size=11))
+        self.newsapi_lang_entry = ctk.CTkEntry(self.newsapi_filters_frame, placeholder_text=self.tr("newsapi_ph_lang"), width=70, height=24, font=ctk.CTkFont(size=11))
         self.newsapi_lang_entry.pack(side="left", padx=(0, 5))
-        self.newsapi_date_entry = ctk.CTkEntry(self.newsapi_filters_frame, placeholder_text="Από (ΕΕΕΕ-ΜΜ-ΗΗ)", width=110, height=24, font=ctk.CTkFont(size=11))
+        self.newsapi_date_entry = ctk.CTkEntry(self.newsapi_filters_frame, placeholder_text=self.tr("newsapi_ph_date"), width=110, height=24, font=ctk.CTkFont(size=11))
         self.newsapi_date_entry.pack(side="left")
-        ToolTip(self.newsapi_q_entry, "Επιπλέον λέξη-κλειδί αναζήτησης.\nΠαράδειγμα: AI, earnings, merge\nΑφήστε κενό για γενικά νέα.")
-        ToolTip(self.newsapi_lang_entry, "Γλώσσα άρθρων (π.χ. 'en' για Αγγλικά, 'el' για Ελληνικά).\nΑφήστε κενό για αναζήτηση σε όλες τις γλώσσες.")
-        ToolTip(self.newsapi_date_entry, "Από ποια ημερομηνία και μετά να αντληθούν νέα.\nΜορφή: ΕΕΕΕ-ΜΜ-ΗΗ (π.χ. 2023-11-25)\nΑφήστε κενό για τα πιο σχετικά/πρόσφατα.")
+        ToolTip(self.newsapi_q_entry, self.tr("tt_newsapi_q"))
+        ToolTip(self.newsapi_lang_entry, self.tr("tt_newsapi_lang"))
+        ToolTip(self.newsapi_date_entry, self.tr("tt_newsapi_date"))
 
-        self.cb_news = ctk.CTkCheckBox(pane, text="Ενσωμάτωση πρόσφατων ειδήσεων (DuckDuckGo)")
+        self.cb_news = ctk.CTkCheckBox(pane, text=self.tr("include_news"))
         self.cb_news.pack(anchor="w", padx=15, pady=8)
-        ToolTip(self.cb_news, "Ψάχνει για τα πιο πρόσφατα νέα της εταιρείας")
+        ToolTip(self.cb_news, self.tr("tt_cb_news"))
         
-        ctk.CTkLabel(pane, text="Μορφή Ανάλυσης ℹ️", font=ctk.CTkFont(size=12, weight="bold")).pack(anchor="w", padx=15, pady=(15, 0))
+        ctk.CTkLabel(pane, text=self.tr("analysis_format"), font=ctk.CTkFont(size=12, weight="bold")).pack(anchor="w", padx=15, pady=(15, 0))
         self.format_var = ctk.StringVar(value="Αναλυτικά")
-        ctk.CTkRadioButton(pane, text="Αναλυτικά (Εκτενές Άρθρο)", variable=self.format_var, value="Αναλυτικά").pack(anchor="w", padx=20, pady=5)
-        ctk.CTkRadioButton(pane, text="Συνοπτικά (Bullet Points)", variable=self.format_var, value="Συνοπτικά").pack(anchor="w", padx=20, pady=5)
+        ctk.CTkRadioButton(pane, text=self.tr("format_detailed"), variable=self.format_var, value="Αναλυτικά").pack(anchor="w", padx=20, pady=5)
+        ctk.CTkRadioButton(pane, text=self.tr("format_summary"), variable=self.format_var, value="Συνοπτικά").pack(anchor="w", padx=20, pady=5)
         
         prompt_header_frame = ctk.CTkFrame(pane, fg_color="transparent")
         prompt_header_frame.pack(fill="x", padx=15, pady=(15, 2))
-        ctk.CTkLabel(prompt_header_frame, text="Επιπλέον Οδηγίες (System prompt)", font=ctk.CTkFont(size=12, weight="bold")).pack(side="left")
-        ctk.CTkButton(prompt_header_frame, text="📋 Επικόλληση", width=80, height=24, fg_color="#444", hover_color="#555", command=lambda: self.paste_to_textbox(self.extra_prompt_box)).pack(side="right")
+        ctk.CTkLabel(prompt_header_frame, text=self.tr("extra_prompt"), font=ctk.CTkFont(size=12, weight="bold")).pack(side="left")
+        ctk.CTkButton(prompt_header_frame, text=self.tr("paste"), width=80, height=24, fg_color="#444", hover_color="#555", command=lambda: self.paste_to_textbox(self.extra_prompt_box)).pack(side="right")
         
         self.extra_prompt_box = ctk.CTkTextbox(pane, height=120, font=ctk.CTkFont(size=12))
         self.extra_prompt_box.pack(fill="x", padx=15, pady=(0, 15))
-        ToolTip(self.extra_prompt_box, "Γράψτε εδώ τυχόν ειδικές οδηγίες για το AI\n(π.χ. 'Ανάλυσε αν κάνει για μακροπρόθεσμη')")
+        ToolTip(self.extra_prompt_box, self.tr("tt_extra_prompt"))
 
         self.attached_files = []
         self.files_frame = ctk.CTkFrame(pane, fg_color="transparent")
         self.files_frame.pack(fill="x", padx=15, pady=(0, 15))
         
-        attach_btn = ctk.CTkButton(self.files_frame, text="📎 Προσθήκη Αρχείου (TXT/PDF)", width=150, height=24, fg_color="#1f77b4", hover_color="#145c8f", command=self.attach_file)
+        attach_btn = ctk.CTkButton(self.files_frame, text=self.tr("add_file"), width=150, height=24, fg_color="#1f77b4", hover_color="#145c8f", command=self.attach_file)
         attach_btn.pack(side="left")
         
         self.clear_files_btn = ctk.CTkButton(self.files_frame, text="❌", width=24, height=24, fg_color="#d9534f", hover_color="#c9302c", command=self.clear_attached_files)
@@ -425,7 +439,7 @@ class App(ctk.CTk):
 
         articles_header = ctk.CTkFrame(pane, fg_color="transparent")
         articles_header.pack(fill="x", padx=15, pady=(5, 2))
-        ctk.CTkLabel(articles_header, text="Επικόλληση Συγκεκριμένων Άρθρων", font=ctk.CTkFont(size=12, weight="bold")).pack(side="left")
+        ctk.CTkLabel(articles_header, text=self.tr("paste_articles"), font=ctk.CTkFont(size=12, weight="bold")).pack(side="left")
 
         self.article_boxes = []
         for i in range(3):
@@ -433,14 +447,14 @@ class App(ctk.CTk):
             art_frame.pack(fill="x", padx=15, pady=2)
             lbl_btn_frame = ctk.CTkFrame(art_frame, fg_color="transparent")
             lbl_btn_frame.pack(fill="x")
-            ctk.CTkLabel(lbl_btn_frame, text=f"Άρθρο {i+1}:", font=ctk.CTkFont(size=11)).pack(side="left")
+            ctk.CTkLabel(lbl_btn_frame, text=f"{self.tr('article_num')}{i+1}:", font=ctk.CTkFont(size=11)).pack(side="left")
             box = ctk.CTkTextbox(art_frame, height=60, font=ctk.CTkFont(size=11))
-            paste_btn = ctk.CTkButton(lbl_btn_frame, text="📋 Επικόλληση", width=60, height=20, fg_color="#444", hover_color="#555", command=lambda b=box: self.paste_to_textbox(b))
+            paste_btn = ctk.CTkButton(lbl_btn_frame, text=self.tr("paste"), width=60, height=20, fg_color="#444", hover_color="#555", command=lambda b=box: self.paste_to_textbox(b))
             paste_btn.pack(side="right")
             box.pack(fill="x", pady=(2, 5))
             self.article_boxes.append(box)
 
-        self.analyze_btn = ctk.CTkButton(pane, text="🚀 Έναρξη Ανάλυσης", font=ctk.CTkFont(weight="bold"), fg_color="#d9534f", hover_color="#c9302c", command=self.fetch_data, height=40)
+        self.analyze_btn = ctk.CTkButton(pane, text=self.tr("start_analysis"), font=ctk.CTkFont(weight="bold"), fg_color="#d9534f", hover_color="#c9302c", command=self.fetch_data, height=40)
         self.analyze_btn.pack(fill="x", padx=15, pady=20)
         
         self.status_main = ctk.CTkLabel(pane, text="", text_color="orange")
@@ -491,7 +505,7 @@ class App(ctk.CTk):
         
         paste_btn = ctk.CTkButton(f, text="📋", width=25, fg_color="#444", hover_color="#555", command=lambda: self.paste_to_entry(u_entry))
         paste_btn.pack(side="right", padx=(5, 0))
-        ToolTip(paste_btn, "Επικόλληση URL από το πρόχειρο")
+        ToolTip(paste_btn, self.tr("tt_paste_url"))
         
         u_entry.pack(side="left", fill="x", expand=True)
         if url: u_entry.insert(0, url)
@@ -517,21 +531,21 @@ class App(ctk.CTk):
         
         title_logo_frame = ctk.CTkFrame(pane, fg_color="transparent")
         title_logo_frame.pack(anchor="w", pady=(0, 10), fill="x")
-        self.overview_title = ctk.CTkLabel(title_logo_frame, text="Επισκόπηση Επιλεγμένης Μετοχής", font=ctk.CTkFont(size=18, weight="bold"))
+        self.overview_title = ctk.CTkLabel(title_logo_frame, text=self.tr("overview_title"), font=ctk.CTkFont(size=18, weight="bold"))
         self.overview_title.pack(side="left")
         
         self.website_url = ""
         self.website_var = ctk.IntVar(value=1)
         self.website_link_label = ctk.CTkLabel(title_logo_frame, text="", text_color="#1f77b4", cursor="hand2", font=ctk.CTkFont(size=12, underline=True))
         self.website_link_label.bind("<Button-1>", lambda e: webbrowser.open(self.website_url) if self.website_url else None)
-        ToolTip(self.website_link_label, "Άνοιγμα εταιρικού site στον browser")
+        ToolTip(self.website_link_label, self.tr("tt_website_link"))
         
-        self.website_cb = ctk.CTkCheckBox(title_logo_frame, text="Συμπερίληψη", variable=self.website_var, font=ctk.CTkFont(size=11), width=20)
-        ToolTip(self.website_cb, "Συμπερίληψη περιεχομένου από το εταιρικό site στην ανάλυση")
+        self.website_cb = ctk.CTkCheckBox(title_logo_frame, text=self.tr("include_website"), variable=self.website_var, font=ctk.CTkFont(size=11), width=20)
+        ToolTip(self.website_cb, self.tr("tt_website_cb"))
         
         time_frame = ctk.CTkFrame(pane, fg_color="transparent")
         time_frame.pack(fill="x", pady=5)
-        ctk.CTkLabel(time_frame, text="Χρονικό Διάστημα γραφήματος:", font=ctk.CTkFont(size=12)).pack(side="left")
+        ctk.CTkLabel(time_frame, text=self.tr("chart_timeframe"), font=ctk.CTkFont(size=12)).pack(side="left")
         self.time_var = ctk.StringVar(value="6mo")
         self.time_menu = ctk.CTkOptionMenu(time_frame, variable=self.time_var, values=["1mo", "3mo", "6mo", "1y", "5y"], command=self.on_time_period_change)
         self.time_menu.pack(side="left", padx=10)
@@ -539,18 +553,24 @@ class App(ctk.CTk):
         prices_frame = ctk.CTkFrame(pane, fg_color="transparent")
         prices_frame.pack(fill="x", pady=5)
         prices_frame.grid_columnconfigure((0,1,2), weight=1)
-        self.l_yahoo = self.create_metric(prices_frame, "Yahoo Finance ⏱", "---", 0, 0, "Τρέχουσα τιμή από Yahoo Finance")
-        self.l_ft = self.create_metric(prices_frame, "Financial Times ⏱", "---", 0, 1, "Τρέχουσα τιμή από Financial Times")
-        self.l_inv = self.create_metric(prices_frame, "Investing.com ⏱", "---", 0, 2, "Τρέχουσα τιμή από Investing.com")
+        self.l_yahoo = self.create_metric(prices_frame, "Yahoo Finance ⏱", "---", 0, 0, self.tr("tt_yahoo_price"))
+        self.l_ft = self.create_metric(prices_frame, "Financial Times ⏱", "---", 0, 1, self.tr("tt_ft_price"))
+        self.l_inv = self.create_metric(prices_frame, "Investing.com ⏱", "---", 0, 2, self.tr("tt_inv_price"))
         
         self.overview_tabs = ctk.CTkTabview(pane, height=650)
         self.overview_tabs.pack(fill="x", pady=2)
-        self.overview_tabs.add("📈 Γράφημα & Δείκτες")
-        self.overview_tabs.add("📰 Πρόσφατα Νέα")
-        self.overview_tabs.add("📰 NewsAPI.org")
-        self.overview_tabs.add("🌐 Σελίδες Μετοχής")
         
-        self.chart_tab = self.overview_tabs.tab("📈 Γράφημα & Δείκτες")
+        self.tab_chart_name = self.tr("tab_chart")
+        self.tab_news_name = self.tr("tab_news")
+        self.tab_newsapi_name = self.tr("tab_newsapi")
+        self.tab_pages_name = self.tr("tab_pages")
+        
+        self.overview_tabs.add(self.tab_chart_name)
+        self.overview_tabs.add(self.tab_news_name)
+        self.overview_tabs.add(self.tab_newsapi_name)
+        self.overview_tabs.add(self.tab_pages_name)
+        
+        self.chart_tab = self.overview_tabs.tab(self.tab_chart_name)
         
         self.chart_inner_frame = ctk.CTkFrame(self.chart_tab, fg_color="transparent")
         self.chart_inner_frame.pack(fill="both", expand=True)
@@ -566,75 +586,75 @@ class App(ctk.CTk):
         self.show_ema_var = ctk.IntVar(value=0)
         ctk.CTkCheckBox(self.ind_frame, text="EMA (20, 50)", variable=self.show_ema_var, command=self.redraw_current_chart).pack(side="left", padx=10)
         
-        self.news_frame = ctk.CTkScrollableFrame(self.overview_tabs.tab("📰 Πρόσφατα Νέα"))
+        self.news_frame = ctk.CTkScrollableFrame(self.overview_tabs.tab(self.tab_news_name))
         self.news_frame.pack(fill="both", expand=True, padx=5, pady=5)
         ctk.CTkLabel(self.news_frame, text="Οι ειδήσεις θα εμφανιστούν εδώ.", text_color="gray").pack(pady=20)
         
-        self.newsapi_frame = ctk.CTkScrollableFrame(self.overview_tabs.tab("📰 NewsAPI.org"))
+        self.newsapi_frame = ctk.CTkScrollableFrame(self.overview_tabs.tab(self.tab_newsapi_name))
         self.newsapi_frame.pack(fill="both", expand=True, padx=5, pady=5)
         ctk.CTkLabel(self.newsapi_frame, text="Ενεργοποιήστε το NewsAPI αριστερά για προβολή.", text_color="gray").pack(pady=20)
         self.newsapi_checkboxes = []
         
-        self.pages_frame = ctk.CTkFrame(self.overview_tabs.tab("🌐 Σελίδες Μετοχής"), fg_color="transparent")
+        self.pages_frame = ctk.CTkFrame(self.overview_tabs.tab(self.tab_pages_name), fg_color="transparent")
         self.pages_frame.pack(fill="both", expand=True, padx=20, pady=20)
         ctk.CTkLabel(self.pages_frame, text="Επιλέξτε μια μετοχή για να δείτε τους συνδέσμους.", text_color="gray").pack(pady=20)
         
-        ctk.CTkLabel(pane, text="📊 Βασικά Στατιστικά", font=ctk.CTkFont(size=13, weight="bold")).pack(anchor="w", pady=(10, 2))
+        ctk.CTkLabel(pane, text=self.tr("stats_title"), font=ctk.CTkFont(size=13, weight="bold")).pack(anchor="w", pady=(10, 2))
         stats_frame = ctk.CTkFrame(pane, fg_color="transparent")
         stats_frame.pack(fill="x", pady=2)
         stats_frame.grid_columnconfigure((0,1,2,3), weight=1)
-        self.l_mcap = self.create_metric(stats_frame, "Market Cap", "---", 0, 0, "Συνολική χρηματιστηριακή αξία εταιρείας")
-        self.l_pe = self.create_metric(stats_frame, "P/E Ratio", "---", 0, 1, "Δείκτης αποτίμησης (Χαμηλότερο = φθηνότερη μετοχή)")
-        self.l_div = self.create_metric(stats_frame, "Div Yield", "---", 0, 2, "Μερισματική Απόδοση (% επί της τιμής)")
-        self.l_beta = self.create_metric(stats_frame, "Beta", "---", 0, 3, "Μεταβλητότητα: >1 Πιο ευμετάβλητη, <1 Πιο σταθερή")
+        self.l_mcap = self.create_metric(stats_frame, "Market Cap", "---", 0, 0, self.tr("tt_mcap"))
+        self.l_pe = self.create_metric(stats_frame, "P/E Ratio", "---", 0, 1, self.tr("tt_pe"))
+        self.l_div = self.create_metric(stats_frame, "Div Yield", "---", 0, 2, self.tr("tt_div"))
+        self.l_beta = self.create_metric(stats_frame, "Beta", "---", 0, 3, self.tr("tt_beta"))
         
-        ctk.CTkLabel(pane, text="💼 Οικονομική Υγεία & Απόδοση", font=ctk.CTkFont(size=13, weight="bold")).pack(anchor="w", pady=(10, 2))
+        ctk.CTkLabel(pane, text=self.tr("health_title"), font=ctk.CTkFont(size=13, weight="bold")).pack(anchor="w", pady=(10, 2))
         health_frame = ctk.CTkFrame(pane, fg_color="transparent")
         health_frame.pack(fill="x", pady=2)
         health_frame.grid_columnconfigure((0,1,2,3), weight=1)
-        self.l_rev_growth = self.create_metric(health_frame, "Rev Growth", "---", 0, 0, "Αύξηση Εσόδων (Revenue Growth)")
-        self.l_roe = self.create_metric(health_frame, "ROE", "---", 0, 1, "Απόδοση Ιδίων Κεφαλαίων (Return on Equity)")
-        self.l_op_margin = self.create_metric(health_frame, "Op Margin", "---", 0, 2, "Λειτουργικό Περιθώριο Κέρδους")
-        self.l_dte = self.create_metric(health_frame, "Debt/Eq", "---", 0, 3, "Λόγος Χρέους προς Ίδια Κεφάλαια")
-        self.l_fcf = self.create_metric(health_frame, "Free Cash Flow", "---", 1, 0, "Ελεύθερες Ταμειακές Ροές")
+        self.l_rev_growth = self.create_metric(health_frame, "Rev Growth", "---", 0, 0, self.tr("tt_rev_growth"))
+        self.l_roe = self.create_metric(health_frame, "ROE", "---", 0, 1, self.tr("tt_roe"))
+        self.l_op_margin = self.create_metric(health_frame, "Op Margin", "---", 0, 2, self.tr("tt_op_margin"))
+        self.l_dte = self.create_metric(health_frame, "Debt/Eq", "---", 0, 3, self.tr("tt_dte"))
+        self.l_fcf = self.create_metric(health_frame, "Free Cash Flow", "---", 1, 0, self.tr("tt_fcf"))
         
-        ctk.CTkLabel(pane, text="📈 Τεχνικοί Δείκτες", font=ctk.CTkFont(size=13, weight="bold")).pack(anchor="w", pady=(10, 2))
+        ctk.CTkLabel(pane, text=self.tr("tech_title"), font=ctk.CTkFont(size=13, weight="bold")).pack(anchor="w", pady=(10, 2))
         tech_frame = ctk.CTkFrame(pane, fg_color="transparent")
         tech_frame.pack(fill="x", pady=2)
         tech_frame.grid_columnconfigure((0,1,2,3), weight=1)
-        self.l_rsi = self.create_metric(tech_frame, "RSI (14)", "---", 0, 0, "Σχετική Ισχύς: >70 Υπεραγορασμένη, <30 Υπερπουλημένη")
-        self.l_macd = self.create_metric(tech_frame, "MACD", "---", 0, 1, "Κινητός Μέσος: Θετικό = Ανοδική Τάση")
-        self.l_sma20 = self.create_metric(tech_frame, "SMA 20", "---", 0, 2, "Απλός Κινητός Μέσος 20 ημερών")
-        self.l_sma50 = self.create_metric(tech_frame, "SMA 50", "---", 0, 3, "Απλός Κινητός Μέσος 50 ημερών")
+        self.l_rsi = self.create_metric(tech_frame, "RSI (14)", "---", 0, 0, self.tr("tt_rsi"))
+        self.l_macd = self.create_metric(tech_frame, "MACD", "---", 0, 1, self.tr("tt_macd"))
+        self.l_sma20 = self.create_metric(tech_frame, "SMA 20", "---", 0, 2, self.tr("tt_sma20"))
+        self.l_sma50 = self.create_metric(tech_frame, "SMA 50", "---", 0, 3, self.tr("tt_sma50"))
 
-        ctk.CTkLabel(pane, text="🏛️ Δεδομένα Alpha Vantage (Overview)", font=ctk.CTkFont(size=13, weight="bold")).pack(anchor="w", pady=(10, 2))
+        ctk.CTkLabel(pane, text=self.tr("av_title"), font=ctk.CTkFont(size=13, weight="bold")).pack(anchor="w", pady=(10, 2))
         av_frame = ctk.CTkFrame(pane, fg_color="transparent")
         av_frame.pack(fill="x", pady=2)
         av_frame.grid_columnconfigure((0,1,2), weight=1)
-        self.l_av_pe = self.create_metric(av_frame, "PE Ratio (AV)", "---", 0, 0, "P/E από Alpha Vantage")
-        self.l_av_div = self.create_metric(av_frame, "Div Yield (AV)", "---", 0, 1, "Μέρισμα από Alpha Vantage")
-        self.l_av_eps = self.create_metric(av_frame, "EPS (AV)", "---", 0, 2, "Κέρδη ανά Μετοχή (Alpha Vantage)")
+        self.l_av_pe = self.create_metric(av_frame, "PE Ratio (AV)", "---", 0, 0, self.tr("tt_av_pe"))
+        self.l_av_div = self.create_metric(av_frame, "Div Yield (AV)", "---", 0, 1, self.tr("tt_av_div"))
+        self.l_av_eps = self.create_metric(av_frame, "EPS (AV)", "---", 0, 2, self.tr("tt_av_eps"))
 
-        ctk.CTkLabel(pane, text="🌐 Δεδομένα Finnhub (Real-Time)", font=ctk.CTkFont(size=13, weight="bold")).pack(anchor="w", pady=(10, 2))
+        ctk.CTkLabel(pane, text=self.tr("fh_title"), font=ctk.CTkFont(size=13, weight="bold")).pack(anchor="w", pady=(10, 2))
         fh_frame = ctk.CTkFrame(pane, fg_color="transparent")
         fh_frame.pack(fill="x", pady=2)
         fh_frame.grid_columnconfigure((0,1,2,3), weight=1)
-        self.l_fh_cur = self.create_metric(fh_frame, "Τρέχουσα", "---", 0, 0, "Τρέχουσα ζωντανή τιμή Finnhub")
-        self.l_fh_open = self.create_metric(fh_frame, "Άνοιγμα", "---", 0, 1, "Τιμή ανοίγματος Finnhub")
-        self.l_fh_high = self.create_metric(fh_frame, "Υψηλό Ημ.", "---", 0, 2, "Υψηλό ημέρας Finnhub")
-        self.l_fh_low = self.create_metric(fh_frame, "Χαμηλό Ημ.", "---", 0, 3, "Χαμηλό ημέρας Finnhub")
+        self.l_fh_cur = self.create_metric(fh_frame, self.tr("fh_lbl_cur"), "---", 0, 0, self.tr("tt_fh_cur"))
+        self.l_fh_open = self.create_metric(fh_frame, self.tr("fh_lbl_open"), "---", 0, 1, self.tr("tt_fh_open"))
+        self.l_fh_high = self.create_metric(fh_frame, self.tr("fh_lbl_high"), "---", 0, 2, self.tr("tt_fh_high"))
+        self.l_fh_low = self.create_metric(fh_frame, self.tr("fh_lbl_low"), "---", 0, 3, self.tr("tt_fh_low"))
 
-        ctk.CTkLabel(pane, text="🤖 Ανάλυση AI", font=ctk.CTkFont(size=13, weight="bold")).pack(anchor="w", pady=(15, 2))
+        ctk.CTkLabel(pane, text=self.tr("ai_analysis_title"), font=ctk.CTkFont(size=13, weight="bold")).pack(anchor="w", pady=(15, 2))
         self.result_textbox = ctk.CTkTextbox(pane, wrap="word", font=ctk.CTkFont(size=14), height=300)
         self.result_textbox.pack(fill="x", expand=False, pady=5)
         
         actions_frame = ctk.CTkFrame(pane, fg_color="transparent")
         actions_frame.pack(anchor="e", pady=5)
         
-        print_btn = ctk.CTkButton(actions_frame, text="🖨️ Εκτύπωση", fg_color="#1f77b4", hover_color="#145c8f", command=self.print_analysis)
+        print_btn = ctk.CTkButton(actions_frame, text=self.tr("print"), fg_color="#1f77b4", hover_color="#145c8f", command=self.print_analysis)
         print_btn.pack(side="left", padx=(0, 10))
         
-        export_btn = ctk.CTkButton(actions_frame, text="📄 Εξαγωγή σε Word", fg_color="#28a745", hover_color="#218838", command=self.export_to_word)
+        export_btn = ctk.CTkButton(actions_frame, text=self.tr("export_word"), fg_color="#28a745", hover_color="#218838", command=self.export_to_word)
         export_btn.pack(side="left")
 
     def redraw_current_chart(self):
@@ -645,7 +665,7 @@ class App(ctk.CTk):
         pane = ctk.CTkFrame(self.left_scroll_frame, fg_color="transparent")
         pane.grid(row=row, column=col, padx=(20, 10), pady=(10, 40), sticky="nsew")
         
-        ctk.CTkLabel(pane, text="📚 Ιστορικό Αναλύσεων (Τελευταίες 10)", font=ctk.CTkFont(size=16, weight="bold")).pack(anchor="w", pady=(0, 10))
+        ctk.CTkLabel(pane, text=self.tr("history_title"), font=ctk.CTkFont(size=16, weight="bold")).pack(anchor="w", pady=(0, 10))
         
         self.hist_frame = ctk.CTkFrame(pane)
         self.hist_frame.pack(fill="x")
@@ -893,11 +913,11 @@ class App(ctk.CTk):
 
     def on_time_period_change(self, selected_period):
         current_stock = self.stock_var.get()
-        if current_stock not in ["Επίλεξε Μετοχή...", "Δεν υπάρχουν μετοχές"]:
+        if current_stock not in [self.tr("choose_stock_default"), self.tr("no_stocks_found"), "Επίλεξε Μετοχή...", "Δεν υπάρχουν μετοχές"]:
             self.on_stock_select(current_stock)
 
     def on_stock_select(self, selected_name):
-        if selected_name in ["Επίλεξε Μετοχή...", "Δεν υπάρχουν μετοχές"]:
+        if selected_name in [self.tr("choose_stock_default"), self.tr("no_stocks_found"), "Επίλεξε Μετοχή...", "Δεν υπάρχουν μετοχές"]:
             return
             
         stock_data = next((item for item in self.user_data.get("watchlist", []) if item.get("Ονομασία") == selected_name), None)
@@ -907,7 +927,7 @@ class App(ctk.CTk):
         self.l_yahoo.configure(text="Φόρτωση...")
         self.l_ft.configure(text="Φόρτωση...")
         self.l_inv.configure(text="Φόρτωση...")
-        self.overview_title.configure(text=f"{selected_name} - Επισκόπηση")
+        self.overview_title.configure(text=f"{selected_name} - {self.tr('overview_short')}")
         self.website_url = ""
         self.website_link_label.pack_forget()
         self.website_cb.pack_forget()
@@ -1065,7 +1085,7 @@ class App(ctk.CTk):
 
     def fetch_data(self):
         selected_name = self.stock_var.get()
-        if selected_name == "Επίλεξε Μετοχή...":
+        if selected_name in [self.tr("choose_stock_default"), "Επίλεξε Μετοχή..."]:
             self.status_main.configure(text="Επίλεξε μια μετοχή πρώτα!", text_color="red")
             return
             
@@ -1219,53 +1239,22 @@ class App(ctk.CTk):
                     self.update()
 
         self.status_main.configure(text="Επικοινωνία με το AI...", text_color="orange")
-        self.overview_title.configure(text=f"{selected_name} - Επισκόπηση")
+        self.overview_title.configure(text=f"{selected_name} - {self.tr('overview_short')}")
         self.update()
         
         user_extra_prompt = self.extra_prompt_box.get("1.0", "end-1c").strip()
         analysis_format = self.format_var.get()
         
-        common_table_instructions = (
-            "Ξεκίνα ΠΑΝΤΑ την ανάλυση (πριν από οτιδήποτε άλλο) παρουσιάζοντας τα παρακάτω βασικά κριτήρια σε μορφή λίστας/πίνακα, κάνοντας μια σύντομη αξιολόγηση δίπλα στο καθένα (βάσει των διαθέσιμων δεδομένων):\n"
-            "- Ανάπτυξη: (Revenue Growth > 5-10% αναλόγως κλάδου)\n"
-            "- Κερδοφορία: (ROE > 15%, Σταθερά ή αυξανόμενα περιθώρια)\n"
-            "- Υγεία: (Net Debt / EBITDA < 3x)\n"
-            "- Αποτίμηση: (Forward P/E χαμηλότερο από το ιστορικό μέσο)\n\n"
-            "Αμέσως μετά, προχώρα στην κυρίως ανάλυση με την εξής δομή:\n"
-        )
+        common_table_instructions = self.tr("prompt_common_table")
         
         if analysis_format == 'Συνοπτικά':
-            format_instructions = (
-                "ΟΔΗΓΙΕΣ ΜΟΡΦΟΠΟΙΗΣΗΣ:\n"
-                "Η ανάλυση πρέπει να είναι ΣΥΝΟΠΤΙΚΗ (χρησιμοποίησε Bullet Points). "
-                "Ακολούθησε ΑΥΣΤΗΡΑ την παρακάτω δομή στα Ελληνικά:\n\n"
-                + common_table_instructions +
-                "1. Εταιρεία & Ειδήσεις: Γενική περιγραφή και οι πιο σημαντικές ειδήσεις.\n"
-                "2. Ανάλυση Δεικτών: Αξιολόγηση των θεμελιωδών και τεχνικών δεικτών.\n"
-                "3. Θετικά Σημεία: Τα δυνατά σημεία και οι ευκαιρίες.\n"
-                "4. Αρνητικά Σημεία: Οι κίνδυνοι και οι αδυναμίες.\n"
-                "5. Συμπέρασμα: Ένα τελικό, ξεκάθαρο γενικό συμπέρασμα."
-            )
+            format_instructions = self.tr("prompt_summary") + common_table_instructions + self.tr("prompt_summary_points")
         else:
-            format_instructions = (
-                "ΟΔΗΓΙΕΣ ΜΟΡΦΟΠΟΙΗΣΗΣ:\n"
-                "Λειτούργησε ως έμπειρος οικονομικός αναλυτής. Θέλω να αναλύσεις τα δεδομένα και να μου παρουσιάσεις μια δομημένη αναφορά στα Ελληνικά, ακολουθώντας ΑΥΣΤΗΡΑ τα παρακάτω σημεία:\n\n"
-                + common_table_instructions +
-                "- Επενδυτική Σύνοψη: Δώσε ξεκάθαρη θέση (Buy/Hold/Sell), 3-4 key highlights και εκτιμώμενη τιμή-στόχο (αν προκύπτει).\n"
-                "- Περιγραφή της Επιχείρησης: Πώς βγάζει χρήματα, βασικά προϊόντα και γεωγραφική έκθεση.\n"
-                "- Ανάλυση Κλάδου & Moat: Τάσεις της αγοράς, ανταγωνισμός και το οικονομικό της 'οχυρό' (ανταγωνιστικό πλεονέκτημα).\n"
-                "- Θεμελιώδης Οικονομική Ανάλυση: Αξιολόγηση εσόδων, περιθωρίων κέρδους, επιπέδων χρέους και ελεύθερων ταμειακών ροών (FCF).\n"
-                "- Ανάλυση Δεικτών: Αξιολόγηση των θεμελιωδών και τεχνικών δεικτών.\n"
-                "- Ποιοτική Ανάλυση: Αξιολόγηση της διοίκησης και πιθανοί κίνδυνοι φήμης/ESG.\n"
-                "- Αποτίμηση: Αξιολόγηση των δεικτών (P/E, EV/EBITDA κ.λπ.) σε σχέση με τον κλάδο.\n"
-                "- Θετικά Σημεία: Τα δυνατά σημεία και οι ευκαιρίες.\n"
-                "- Ανάλυση Κινδύνων: Τα βασικότερα ρίσκα που θα μπορούσαν να απειλήσουν την εταιρεία.\n\n"
-                "Γίνε συγκεκριμένος, αντικειμενικός. Αν λείπουν κρίσιμα στοιχεία για κάποια κατηγορία, επισήμανέ το."
-            )
+            format_instructions = self.tr("prompt_detailed") + common_table_instructions + self.tr("prompt_detailed_points")
         
         final_extra_prompt = format_instructions
         if user_extra_prompt:
-            final_extra_prompt += "\n\nΕΙΔΙΚΕΣ ΟΔΗΓΙΕΣ ΧΡΗΣΤΗ:\n" + user_extra_prompt
+            final_extra_prompt += self.tr("prompt_user_extra") + user_extra_prompt
 
         # Εκτέλεση του AI σε ξεχωριστό Thread
         threading.Thread(target=self.run_ai, args=(selected_name, context, used_sources, final_extra_prompt), daemon=True).start()
@@ -1519,16 +1508,17 @@ class App(ctk.CTk):
             return
 
         api_key = self.user_data.get("api_key")
-        result, error = ai_service.generate_analysis(provider, selected_model, name, context, api_key, temperature, extra_prompt)
+        lang = self.user_data.get("language", "el")
+        result, error = ai_service.generate_analysis(provider, selected_model, name, context, api_key, temperature, extra_prompt, lang)
         
         if error:
             self.after(0, self.update_ai_result, error, "red")
         else:
             date_str = datetime.datetime.now().strftime("%d/%m/%Y")
-            final_text = f"📅 Ημερομηνία Ανάλυσης: {date_str}\n\n{result}"
+            final_text = f"{self.tr('analysis_date')}{date_str}\n\n{result}"
             
             if used_sources:
-                sources_text = "\n\n---\n**Πηγές που χρησιμοποιήθηκαν:**\n" + "\n".join(f"- {s}" for s in used_sources)
+                sources_text = self.tr("sources_used") + "\n".join(f"- {s}" for s in used_sources)
                 final_text += sources_text
             self.after(0, self.update_ai_result, final_text, "green")
 
@@ -1677,7 +1667,7 @@ class App(ctk.CTk):
         if not selected_name:
             selected_name = self.stock_var.get()
             
-        if selected_name in ["Επίλεξε Μετοχή...", "Δεν υπάρχουν μετοχές"]:
+        if selected_name in [self.tr("choose_stock_default"), self.tr("no_stocks_found"), "Επίλεξε Μετοχή...", "Δεν υπάρχουν μετοχές"]:
             return
             
         self.user_data["watchlist"] = [item for item in self.user_data.get("watchlist", []) if item.get("Ονομασία") != selected_name]
@@ -1686,7 +1676,7 @@ class App(ctk.CTk):
         self.update_watchlist_table()
         
         if self.stock_var.get() == selected_name:
-            self.stock_var.set("Επίλεξε Μετοχή...")
+            self.stock_var.set(self.tr("choose_stock_default"))
             
         self.status_label.configure(text=f"✅ Διεγράφη: {selected_name[:15]}", text_color="green")
 
@@ -1736,7 +1726,7 @@ class App(ctk.CTk):
         self.current_av_context = ""
         self.current_fh_context = ""
         
-        self.overview_title.configure(text="Επισκόπηση Επιλεγμένης Μετοχής")
+        self.overview_title.configure(text=self.tr("overview_title"))
         self.website_url = ""
         self.website_link_label.pack_forget()
         self.website_cb.pack_forget()
@@ -1781,7 +1771,7 @@ class App(ctk.CTk):
         self.watchlist_frame.grid_columnconfigure(0, weight=1)
         self.watchlist_frame.grid_columnconfigure((1, 2, 3), weight=0)
 
-        headers = ["Ονομασία", "Σειρά", "Επεξ.", "Διαγρ."]
+        headers = [self.tr("wl_name"), self.tr("wl_order"), self.tr("wl_edit"), self.tr("wl_delete")]
         for col, text in enumerate(headers):
             align = "w" if col == 0 else "e"
             ctk.CTkLabel(self.watchlist_frame, text=text, font=ctk.CTkFont(weight="bold", size=11)).grid(row=0, column=col, padx=2, pady=2, sticky=align)
@@ -1830,7 +1820,7 @@ class App(ctk.CTk):
 
     def update_dropdown(self):
         names = [item.get("Ονομασία", "Άγνωστο") for item in self.user_data.get("watchlist", [])]
-        if not names: names = ["Δεν υπάρχουν μετοχές"]
+        if not names: names = [self.tr("no_stocks_found")]
         self.stock_menu.configure(values=names, command=self.on_stock_select)
 
 if __name__ == "__main__":

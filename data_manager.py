@@ -13,7 +13,7 @@ def load_data():
                 return json.load(f)
         except Exception as e:
             logger.error(f"Σφάλμα κατά τη φόρτωση του {DATA_FILE}: {e}", exc_info=True)
-    return {"api_key": "", "av_api_key": "", "finnhub_api_key": "", "newsapi_key": "", "watchlist": [], "urls": [], "history": [], "api_usage": {"date": "", "av": 0, "fh": 0, "newsapi": 0}}
+    return {"language": "el", "api_key": "", "av_api_key": "", "finnhub_api_key": "", "newsapi_key": "", "watchlist": [], "urls": [], "history": [], "api_usage": {"date": "", "av": 0, "fh": 0, "newsapi": 0}}
 
 def save_data(data):
     """Αποθηκεύει τα δεδομένα χρήστη στο JSON αρχείο."""

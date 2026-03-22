@@ -25,7 +25,7 @@ def build_exe():
     print("\n📦 Δημιουργία του αρχείου .zip για διανομή...")
     exe_path = os.path.join('dist', 'AI Stock Analyzer Desktop.exe')
     readme_path = 'readme.txt'
-    zip_name = os.path.join('dist', 'AI_Stock_Analyzer_Pro_v1.1.zip')
+    zip_name = os.path.join('dist', 'AI_Stock_Analyzer_Pro_v1.2.zip')
     
     with zipfile.ZipFile(zip_name, 'w', zipfile.ZIP_DEFLATED) as zipf:
         if os.path.exists(exe_path):

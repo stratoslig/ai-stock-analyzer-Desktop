@@ -1,5 +1,3 @@
-import google.genai as genai
-import ollama
 import logging
 
 logger = logging.getLogger(__name__)
@@ -8,12 +6,14 @@ def fetch_models(provider, api_key=None):
     """Αντλεί τα διαθέσιμα μοντέλα ανάλογα με τον πάροχο."""
     try:
         if provider == "Gemini (Cloud)":
+            import google.genai as genai
             if not api_key:
                 return ["Απαιτείται API Key"]
             client = genai.Client(api_key=api_key)
             models = [m.name for m in client.models.list() if "gemini" in m.name.lower()]
             return models if models else ["Κανένα διαθέσιμο μοντέλο"]
         else:
+            import ollama
             resp = ollama.list()
             if isinstance(resp, dict):
                 models = [m.get("name", m.get("model")) for m in resp.get("models", [])]
@@ -38,6 +38,7 @@ def generate_analysis(provider, model, name, context, api_key=None, temperature=
             prompt += f"\n\nΕπιπλέον Οδηγίες (System Prompt):\n{extra_prompt}"
     try:
         if provider == "Gemini (Cloud)":
+            import google.genai as genai
             if not api_key:
                 return None, "❌ Το Gemini API Key απουσιάζει. Πρόσθεσέ το στις ρυθμίσεις."
             
@@ -49,6 +50,7 @@ def generate_analysis(provider, model, name, context, api_key=None, temperature=
             )
             return response.text, None
         else:
+            import ollama
             response = ollama.chat(
                 model=model, 
                 messages=[{'role': 'user', 'content': prompt}],

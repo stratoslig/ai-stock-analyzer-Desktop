@@ -1,18 +1,15 @@
-import yfinance as yf
-import pandas as pd
-import pandas_ta as ta
 import logging
 import cloudscraper
 from bs4 import BeautifulSoup
 from ddgs import DDGS
 import requests
-import trafilatura
 
 logger = logging.getLogger(__name__)
 
 def get_stock_info(symbol):
     """Αντλεί βασικές πληροφορίες για την προσθήκη νέας μετοχής."""
     try:
+        import yfinance as yf
         info = yf.Ticker(symbol).info
         return info.get("shortName") or info.get("longName") or symbol
     except Exception as e:
@@ -22,6 +19,9 @@ def get_stock_info(symbol):
 def get_stock_data(symbol, period="6mo"):
     """Αντλεί ιστορικά δεδομένα και υπολογίζει τους τεχνικούς δείκτες."""
     try:
+        import yfinance as yf
+        import pandas as pd
+        import pandas_ta as ta
         ticker = yf.Ticker(symbol)
         hist = ticker.history(period=period)
         info = ticker.info
@@ -324,6 +324,7 @@ def get_newsapi_data(query, api_key, extra_query="", language="", from_date=""):
 def scrape_url_text(url):
     """Αντλεί το περιεχόμενο από ένα custom URL."""
     try:
+        import trafilatura
         downloaded = trafilatura.fetch_url(url)
         if downloaded is None:
             return ""

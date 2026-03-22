@@ -5,17 +5,12 @@ import webbrowser
 import logging
 import tkinter as tk
 from tkinter import messagebox
-from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolbar2Tk
-from matplotlib.figure import Figure
-import matplotlib.dates as mdates
-from matplotlib.widgets import MultiCursor
 import requests
 import datetime
 import os
 import sys
 import tempfile
 import subprocess
-import PyPDF2
 
 from data_manager import load_data, save_data
 import stock_fetcher
@@ -267,6 +262,8 @@ class App(ctk.CTk):
 
         self.update_dropdown()
         self.update_models()
+        
+        self.check_for_updates()
 
     def show_about_window(self):
         about_win = ctk.CTkToplevel(self)
@@ -298,6 +295,36 @@ class App(ctk.CTk):
             self.user_data["language"] = new_lang
             save_data(self.user_data)
             messagebox.showinfo("Επανεκκίνηση / Restart", "Παρακαλώ κάντε επανεκκίνηση της εφαρμογής (κλείσιμο και άνοιγμα) για να εφαρμοστεί πλήρως η αλλαγή γλώσσας.\n\nPlease restart the application to fully apply the language change.")
+
+    def check_for_updates(self):
+        """Ελέγχει αθόρυβα για νέες εκδόσεις μέσω του GitHub API."""
+        def fetch():
+            try:
+                # Το API endpoint που φέρνει το πιο πρόσφατο release
+                url = "https://api.github.com/repos/stratoslig/ai-stock-analyzer-Desktop/releases/latest"
+                resp = requests.get(url, timeout=5)
+                if resp.status_code == 200:
+                    data = resp.json()
+                    latest_version = data.get("tag_name", "").replace("v", "")
+                    current_version = "1.2"
+                    
+                    # Απλή σύγκριση εκδόσεων (π.χ. "1.3" > "1.2")
+                    if latest_version and latest_version != current_version:
+                        try:
+                            if tuple(map(int, latest_version.split("."))) > tuple(map(int, current_version.split("."))):
+                                release_url = data.get("html_url")
+                                # Εμφάνιση του μηνύματος μετά από 2 δευτερόλεπτα για να έχει φορτώσει το UI
+                                self.after(2000, lambda: self._show_update_dialog(latest_version, release_url))
+                        except Exception:
+                            pass
+            except Exception as e:
+                logger.error(f"Σφάλμα ελέγχου ενημερώσεων: {e}")
+        threading.Thread(target=fetch, daemon=True).start()
+
+    def _show_update_dialog(self, version, url):
+        msg = self.tr("update_msg").replace("{version}", version)
+        if messagebox.askyesno(self.tr("update_title"), msg):
+            webbrowser.open(url)
 
     def _sync_api_usage(self):
         """Συγχρονίζει τη χρήση των API. Μηδενίζει αυτόματα αν άλλαξε η μέρα."""
@@ -1213,6 +1240,7 @@ class App(ctk.CTk):
 
         # Προσθήκη αρχείων TXT/PDF
         if getattr(self, 'attached_files', []):
+            import PyPDF2
             for fpath in self.attached_files:
                 try:
                     fname = os.path.basename(fpath)
@@ -1260,6 +1288,11 @@ class App(ctk.CTk):
         threading.Thread(target=self.run_ai, args=(selected_name, context, used_sources, final_extra_prompt), daemon=True).start()
 
     def draw_chart(self, df):
+        from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
+        from matplotlib.figure import Figure
+        import matplotlib.dates as mdates
+        from matplotlib.widgets import MultiCursor
+
         self.current_df = df
         # Καθαρισμός προηγούμενου γραφήματος
         for widget in self.chart_inner_frame.winfo_children():
@@ -1381,6 +1414,11 @@ class App(ctk.CTk):
 
     def show_large_chart(self, df):
         """Ανοίγει το γράφημα σε νέο μεγάλο παράθυρο με εργαλεία περιήγησης."""
+        from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolbar2Tk
+        from matplotlib.figure import Figure
+        import matplotlib.dates as mdates
+        from matplotlib.widgets import MultiCursor
+
         top = ctk.CTkToplevel(self)
         top.title(f"Αναλυτικό Γράφημα - {self.stock_var.get()}")
         top.geometry("1200x850")

@@ -145,7 +145,9 @@ TRANSLATIONS = {
         "fh_lbl_cur": "Τρέχουσα",
         "fh_lbl_open": "Άνοιγμα",
         "fh_lbl_high": "Υψηλό Ημ.",
-        "fh_lbl_low": "Χαμηλό Ημ."
+        "fh_lbl_low": "Χαμηλό Ημ.",
+        "update_title": "Νέα Έκδοση Διαθέσιμη!",
+        "update_msg": "Μια νέα έκδοση ({version}) είναι διαθέσιμη στο GitHub!\n\nΘέλετε να μεταβείτε στη σελίδα λήψης για να την κατεβάσετε;"
     },
     "en": {
         "ai_provider": "AI Provider",
@@ -293,6 +295,8 @@ TRANSLATIONS = {
         "fh_lbl_cur": "Current",
         "fh_lbl_open": "Open",
         "fh_lbl_high": "Day High",
-        "fh_lbl_low": "Day Low"
+        "fh_lbl_low": "Day Low",
+        "update_title": "New Version Available!",
+        "update_msg": "A new version ({version}) is available on GitHub!\n\nWould you like to open the download page?"
     }
 }

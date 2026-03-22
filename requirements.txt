@@ -10,3 +10,4 @@ cloudscraper
 pyinstaller
 matplotlib
 PyPDF2
+trafilatura

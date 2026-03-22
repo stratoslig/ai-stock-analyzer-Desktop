@@ -4,6 +4,7 @@ from tkinter import filedialog
 import webbrowser
 import logging
 import tkinter as tk
+from tkinter import messagebox
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolbar2Tk
 from matplotlib.figure import Figure
 import matplotlib.dates as mdates
@@ -71,7 +72,6 @@ class App(ctk.CTk):
         self.user_data = load_data()
         self.current_av_context = ""
         self.current_fh_context = ""
-        self.current_ma_agg = None
         self.page_checkboxes = []
 
         # Καθαρισμός τυχόν κενών εγγραφών από τα δεδομένα χρήστη
@@ -96,7 +96,7 @@ class App(ctk.CTk):
             self.iconbitmap(resource_path("icon.ico"))
             # Ενημέρωση των Windows για εμφάνιση του σωστού εικονιδίου στη γραμμή εργασιών (Taskbar)
             import ctypes
-            myappid = 'aistockanalyzer.pro.desktop.1.0'
+            myappid = 'aistockanalyzer.pro.desktop.1.1'
             ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(myappid)
         except Exception:
             pass
@@ -168,14 +168,14 @@ class App(ctk.CTk):
 
         f_api4 = ctk.CTkFrame(self.sidebar_frame, fg_color="transparent")
         f_api4.grid(row=10, column=0, padx=20, pady=2, sticky="ew")
-        ctk.CTkLabel(f_api4, text="MarketAux Key:", font=ctk.CTkFont(size=11), text_color="gray").pack(anchor="w")
+        ctk.CTkLabel(f_api4, text="NewsAPI Key:", font=ctk.CTkFont(size=11), text_color="gray").pack(anchor="w")
         row_api4 = ctk.CTkFrame(f_api4, fg_color="transparent")
         row_api4.pack(fill="x")
-        self.ma_key_entry = ctk.CTkEntry(row_api4, placeholder_text="Επικόλληση κλειδιού...", show="*")
-        self.ma_key_entry.pack(side="left", fill="x", expand=True)
-        self.ma_key_entry.insert(0, self.user_data.get("marketaux_api_key", ""))
-        ctk.CTkButton(row_api4, text="📋", width=25, fg_color="#444", hover_color="#555", command=lambda: self.paste_to_entry(self.ma_key_entry)).pack(side="right", padx=(5, 0))
-        ToolTip(self.ma_key_entry, "Κλειδί για MarketAux (Ειδήσεις/Sentiment)")
+        self.newsapi_key_entry = ctk.CTkEntry(row_api4, placeholder_text="Επικόλληση κλειδιού...", show="*")
+        self.newsapi_key_entry.pack(side="left", fill="x", expand=True)
+        self.newsapi_key_entry.insert(0, self.user_data.get("newsapi_key", ""))
+        ctk.CTkButton(row_api4, text="📋", width=25, fg_color="#444", hover_color="#555", command=lambda: self.paste_to_entry(self.newsapi_key_entry)).pack(side="right", padx=(5, 0))
+        ToolTip(self.newsapi_key_entry, "Κλειδί για NewsAPI.org (Ειδήσεις)")
 
         self.save_settings_btn = ctk.CTkButton(self.sidebar_frame, text="💾 Αποθήκευση Κλειδιών", command=self.save_keys, fg_color="#2b2b2b", hover_color="#3b3b3b")
         self.save_settings_btn.grid(row=11, column=0, padx=20, pady=(5, 10), sticky="ew")
@@ -218,8 +218,12 @@ class App(ctk.CTk):
         self.clear_cache_btn.grid(row=20, column=0, padx=20, pady=10, sticky="ew")
         ToolTip(self.clear_cache_btn, "Καθαρίζει τα προσωρινά δεδομένα (Γραφήματα/Τιμές)\nΔιατηρεί το ιστορικό ανέπαφο.")
 
+        self.clear_all_data_btn = ctk.CTkButton(self.sidebar_frame, text="🗑️ Εκκαθάριση Όλων των Δεδομένων", fg_color="transparent", border_width=1, text_color="#d9534f", hover_color="#3b1a1a", command=self.clear_all_data)
+        self.clear_all_data_btn.grid(row=21, column=0, padx=20, pady=(0, 10), sticky="ew")
+        ToolTip(self.clear_all_data_btn, "Διαγράφει ΟΛΑ τα δεδομένα (Ιστορικό, Watchlist, API Keys, URLs).\nΗ εφαρμογή θα επανέλθει στην αρχική της κατάσταση.")
+
         self.status_label = ctk.CTkLabel(self.sidebar_frame, text="", text_color="green")
-        self.status_label.grid(row=21, column=0, pady=(0, 10))
+        self.status_label.grid(row=22, column=0, pady=(0, 10))
 
         self.update_watchlist_table()
 
@@ -265,7 +269,7 @@ class App(ctk.CTk):
         about_win.grab_set()      # "Κλειδώνει" το κεντρικό παράθυρο μέχρι να κλείσει το About
 
         ctk.CTkLabel(about_win, text="📈 AI Stock Analyzer Pro", font=ctk.CTkFont(size=20, weight="bold")).pack(pady=(20, 5))
-        ctk.CTkLabel(about_win, text="Έκδοση 1.0", font=ctk.CTkFont(size=12), text_color="gray").pack(pady=(0, 5))
+        ctk.CTkLabel(about_win, text="Έκδοση 1.1", font=ctk.CTkFont(size=12), text_color="gray").pack(pady=(0, 5))
         ctk.CTkLabel(about_win, text="Δημιουργός: Stratos Ligoudis", font=ctk.CTkFont(size=13, slant="italic", weight="bold"), text_color="#1f77b4").pack(pady=(0, 10))
 
         desc = ("Μια εφαρμογή που συνδυάζει πραγματικά χρηματιστηριακά δεδομένα, "
@@ -282,7 +286,7 @@ class App(ctk.CTk):
         """Συγχρονίζει τη χρήση των API. Μηδενίζει αυτόματα αν άλλαξε η μέρα."""
         today = datetime.date.today().isoformat()
         if "api_usage" not in self.user_data or self.user_data["api_usage"].get("date") != today:
-            self.user_data["api_usage"] = {"date": today, "av": 0, "fh": 0, "ma": 0}
+            self.user_data["api_usage"] = {"date": today, "av": 0, "fh": 0, "newsapi": 0}
             save_data(self.user_data)
             
         usage = self.user_data.get("api_usage", {})
@@ -293,9 +297,9 @@ class App(ctk.CTk):
         if hasattr(self, 'cb_fh'):
             fh_rem = max(0, 60 - usage.get("fh", 0))
             self.cb_fh.configure(text=f"Ενσωμάτωση Δεδομένων Finnhub (Υπόλοιπο: {fh_rem}/60)")
-        if hasattr(self, 'cb_ma'):
-            ma_rem = max(0, 100 - usage.get("ma", 0))
-            self.cb_ma.configure(text=f"Ενσωμάτωση Δεδομένων MarketAux (Υπόλοιπο: {ma_rem}/100)")
+        if hasattr(self, 'cb_newsapi'):
+            newsapi_rem = max(0, 100 - usage.get("newsapi", 0))
+            self.cb_newsapi.configure(text=f"Ενσωμάτωση Δεδομένων NewsAPI (Υπόλοιπο: {newsapi_rem}/100)")
 
     def toggle_sidebar(self):
         if self.sidebar_frame.winfo_viewable():
@@ -357,7 +361,7 @@ class App(ctk.CTk):
         usage = self.user_data.get("api_usage", {})
         av_rem = max(0, 25 - usage.get("av", 0))
         fh_rem = max(0, 60 - usage.get("fh", 0))
-        ma_rem = max(0, 100 - usage.get("ma", 0))
+        newsapi_rem = max(0, 100 - usage.get("newsapi", 0))
             
         self.av_var = ctk.IntVar(value=0)
         self.cb_av = ctk.CTkCheckBox(pane, text=f"Ενσωμάτωση Δεδομένων Alpha Vantage (Υπόλοιπο: {av_rem}/25)", variable=self.av_var, command=self.on_av_toggle)
@@ -369,18 +373,22 @@ class App(ctk.CTk):
         self.cb_fh.pack(anchor="w", padx=15, pady=8)
         ToolTip(self.cb_fh, "Προσθέτει τα δεδομένα από το Finnhub στο Prompt")
 
-        self.ma_var = ctk.IntVar(value=0)
-        self.cb_ma = ctk.CTkCheckBox(pane, text=f"Ενσωμάτωση Δεδομένων MarketAux (Υπόλοιπο: {ma_rem}/100)", variable=self.ma_var, command=self.on_ma_toggle)
-        self.cb_ma.pack(anchor="w", padx=15, pady=(8, 2))
-        ToolTip(self.cb_ma, "Κατεβάζει επιπλέον ειδήσεις & στατιστικά sentiment από το MarketAux")
+        self.newsapi_var = ctk.IntVar(value=0)
+        self.cb_newsapi = ctk.CTkCheckBox(pane, text=f"Ενσωμάτωση Δεδομένων NewsAPI (Υπόλοιπο: {newsapi_rem}/100)", variable=self.newsapi_var, command=self.on_newsapi_toggle)
+        self.cb_newsapi.pack(anchor="w", padx=15, pady=(8, 2))
+        ToolTip(self.cb_newsapi, "Κατεβάζει επιπλέον ειδήσεις από το NewsAPI.org")
         
-        self.ma_filters_frame = ctk.CTkFrame(pane, fg_color="transparent")
-        self.ma_filters_frame.pack(fill="x", padx=35, pady=(0, 8))
-        self.ma_ind_entry = ctk.CTkEntry(self.ma_filters_frame, placeholder_text="Κλάδος (π.χ. Technology)", width=130, height=24, font=ctk.CTkFont(size=11))
-        self.ma_ind_entry.pack(side="left", padx=(0, 5))
-        self.ma_country_entry = ctk.CTkEntry(self.ma_filters_frame, placeholder_text="Χώρα (π.χ. us)", width=80, height=24, font=ctk.CTkFont(size=11))
-        self.ma_country_entry.pack(side="left")
-        ToolTip(self.ma_ind_entry, "Αφήστε κενό για νέα της μετοχής.\nΣυμπληρώστε για ευρύτερα νέα κλάδου/χώρας.")
+        self.newsapi_filters_frame = ctk.CTkFrame(pane, fg_color="transparent")
+        self.newsapi_filters_frame.pack(fill="x", padx=35, pady=(0, 8))
+        self.newsapi_q_entry = ctk.CTkEntry(self.newsapi_filters_frame, placeholder_text="Λέξη-κλειδί (π.χ. AI)", width=100, height=24, font=ctk.CTkFont(size=11))
+        self.newsapi_q_entry.pack(side="left", padx=(0, 5))
+        self.newsapi_lang_entry = ctk.CTkEntry(self.newsapi_filters_frame, placeholder_text="Γλώσσα (π.χ. en)", width=70, height=24, font=ctk.CTkFont(size=11))
+        self.newsapi_lang_entry.pack(side="left", padx=(0, 5))
+        self.newsapi_date_entry = ctk.CTkEntry(self.newsapi_filters_frame, placeholder_text="Από (ΕΕΕΕ-ΜΜ-ΗΗ)", width=110, height=24, font=ctk.CTkFont(size=11))
+        self.newsapi_date_entry.pack(side="left")
+        ToolTip(self.newsapi_q_entry, "Επιπλέον λέξη-κλειδί αναζήτησης.\nΠαράδειγμα: AI, earnings, merge\nΑφήστε κενό για γενικά νέα.")
+        ToolTip(self.newsapi_lang_entry, "Γλώσσα άρθρων (π.χ. 'en' για Αγγλικά, 'el' για Ελληνικά).\nΑφήστε κενό για αναζήτηση σε όλες τις γλώσσες.")
+        ToolTip(self.newsapi_date_entry, "Από ποια ημερομηνία και μετά να αντληθούν νέα.\nΜορφή: ΕΕΕΕ-ΜΜ-ΗΗ (π.χ. 2023-11-25)\nΑφήστε κενό για τα πιο σχετικά/πρόσφατα.")
 
         self.cb_news = ctk.CTkCheckBox(pane, text="Ενσωμάτωση πρόσφατων ειδήσεων (DuckDuckGo)")
         self.cb_news.pack(anchor="w", padx=15, pady=8)
@@ -536,7 +544,7 @@ class App(ctk.CTk):
         self.overview_tabs.pack(fill="x", pady=2)
         self.overview_tabs.add("📈 Γράφημα & Δείκτες")
         self.overview_tabs.add("📰 Πρόσφατα Νέα")
-        self.overview_tabs.add("📊 MarketAux")
+        self.overview_tabs.add("📰 NewsAPI.org")
         self.overview_tabs.add("🌐 Σελίδες Μετοχής")
         
         self.chart_tab = self.overview_tabs.tab("📈 Γράφημα & Δείκτες")
@@ -559,10 +567,10 @@ class App(ctk.CTk):
         self.news_frame.pack(fill="both", expand=True, padx=5, pady=5)
         ctk.CTkLabel(self.news_frame, text="Οι ειδήσεις θα εμφανιστούν εδώ.", text_color="gray").pack(pady=20)
         
-        self.ma_news_frame = ctk.CTkScrollableFrame(self.overview_tabs.tab("📊 MarketAux"))
-        self.ma_news_frame.pack(fill="both", expand=True, padx=5, pady=5)
-        ctk.CTkLabel(self.ma_news_frame, text="Ενεργοποιήστε το MarketAux αριστερά για προβολή.", text_color="gray").pack(pady=20)
-        self.ma_checkboxes = []
+        self.newsapi_frame = ctk.CTkScrollableFrame(self.overview_tabs.tab("📰 NewsAPI.org"))
+        self.newsapi_frame.pack(fill="both", expand=True, padx=5, pady=5)
+        ctk.CTkLabel(self.newsapi_frame, text="Ενεργοποιήστε το NewsAPI αριστερά για προβολή.", text_color="gray").pack(pady=20)
+        self.newsapi_checkboxes = []
         
         self.pages_frame = ctk.CTkFrame(self.overview_tabs.tab("🌐 Σελίδες Μετοχής"), fg_color="transparent")
         self.pages_frame.pack(fill="both", expand=True, padx=20, pady=20)
@@ -576,6 +584,16 @@ class App(ctk.CTk):
         self.l_pe = self.create_metric(stats_frame, "P/E Ratio", "---", 0, 1, "Δείκτης αποτίμησης (Χαμηλότερο = φθηνότερη μετοχή)")
         self.l_div = self.create_metric(stats_frame, "Div Yield", "---", 0, 2, "Μερισματική Απόδοση (% επί της τιμής)")
         self.l_beta = self.create_metric(stats_frame, "Beta", "---", 0, 3, "Μεταβλητότητα: >1 Πιο ευμετάβλητη, <1 Πιο σταθερή")
+        
+        ctk.CTkLabel(pane, text="💼 Οικονομική Υγεία & Απόδοση", font=ctk.CTkFont(size=13, weight="bold")).pack(anchor="w", pady=(10, 2))
+        health_frame = ctk.CTkFrame(pane, fg_color="transparent")
+        health_frame.pack(fill="x", pady=2)
+        health_frame.grid_columnconfigure((0,1,2,3), weight=1)
+        self.l_rev_growth = self.create_metric(health_frame, "Rev Growth", "---", 0, 0, "Αύξηση Εσόδων (Revenue Growth)")
+        self.l_roe = self.create_metric(health_frame, "ROE", "---", 0, 1, "Απόδοση Ιδίων Κεφαλαίων (Return on Equity)")
+        self.l_op_margin = self.create_metric(health_frame, "Op Margin", "---", 0, 2, "Λειτουργικό Περιθώριο Κέρδους")
+        self.l_dte = self.create_metric(health_frame, "Debt/Eq", "---", 0, 3, "Λόγος Χρέους προς Ίδια Κεφάλαια")
+        self.l_fcf = self.create_metric(health_frame, "Free Cash Flow", "---", 1, 0, "Ελεύθερες Ταμειακές Ροές")
         
         ctk.CTkLabel(pane, text="📈 Τεχνικοί Δείκτες", font=ctk.CTkFont(size=13, weight="bold")).pack(anchor="w", pady=(10, 2))
         tech_frame = ctk.CTkFrame(pane, fg_color="transparent")
@@ -785,74 +803,71 @@ class App(ctk.CTk):
             self.current_fh_context = ""
             self.fh_var.set(0)
 
-    def on_ma_toggle(self):
-        if self.ma_var.get() == 1:
-            self._trigger_ma_fetch()
+    def on_newsapi_toggle(self):
+        if self.newsapi_var.get() == 1:
+            self._trigger_newsapi_fetch()
         else:
-            for widget in self.ma_news_frame.winfo_children():
+            for widget in self.newsapi_frame.winfo_children():
                 widget.destroy()
-            ctk.CTkLabel(self.ma_news_frame, text="Ενεργοποιήστε το MarketAux αριστερά για προβολή.", text_color="gray").pack(pady=20)
-            self.ma_checkboxes = []
+            ctk.CTkLabel(self.newsapi_frame, text="Ενεργοποιήστε το NewsAPI αριστερά για προβολή.", text_color="gray").pack(pady=20)
+            self.newsapi_checkboxes = []
 
-    def _trigger_ma_fetch(self):
+    def _trigger_newsapi_fetch(self):
         self._sync_api_usage()
-        symbol = self._get_current_symbol()
-        ma_key = self.user_data.get("marketaux_api_key")
-        if not symbol: return
-        if not ma_key:
-            self.status_main.configure(text="⚠️ Το API Key του MarketAux απουσιάζει!", text_color="orange")
-            self.ma_var.set(0)
-            return
-        if self.user_data.get("api_usage", {}).get("ma", 0) >= 100:
-            self.status_main.configure(text="⚠️ Το ημερήσιο όριο MarketAux εξαντλήθηκε!", text_color="orange")
-            self.ma_var.set(0)
-            return
-            
-        ind = self.ma_ind_entry.get().strip()
-        cntry = self.ma_country_entry.get().strip()
+        stock_name = self.stock_var.get()
+        if stock_name in ["Επίλεξε Μετοχή...", "Δεν υπάρχουν μετοχές"]: return
         
-        for widget in self.ma_news_frame.winfo_children():
-            widget.destroy()
-        ctk.CTkLabel(self.ma_news_frame, text="Λήψη δεδομένων MarketAux...", text_color="orange").pack(pady=20)
-        threading.Thread(target=self._fetch_ma_thread, args=(symbol, ma_key, ind, cntry), daemon=True).start()
-
-    def _fetch_ma_thread(self, symbol, ma_key, ind, cntry):
-        ma_data = stock_fetcher.get_marketaux_data(symbol, ma_key, ind, cntry)
-        self.after(0, self._update_ma_ui, ma_data)
-
-    def _update_ma_ui(self, ma_data):
-        for widget in self.ma_news_frame.winfo_children():
-            widget.destroy()
-        self.ma_checkboxes = []
-
-        if ma_data.get("error"):
-            self.status_main.configure(text=f"⚠️ Σφάλμα MarketAux: {ma_data.get('error')}", text_color="orange")
-            ctk.CTkLabel(self.ma_news_frame, text=f"Σφάλμα: {ma_data.get('error')}", text_color="red").pack(pady=20)
-            self.ma_var.set(0)
+        api_key = self.user_data.get("newsapi_key")
+        if not api_key:
+            self.status_main.configure(text="⚠️ Το API Key του NewsAPI απουσιάζει!", text_color="orange")
+            self.newsapi_var.set(0)
+            return
+        if self.user_data.get("api_usage", {}).get("newsapi", 0) >= 100:
+            self.status_main.configure(text="⚠️ Το ημερήσιο όριο NewsAPI εξαντλήθηκε!", text_color="orange")
+            self.newsapi_var.set(0)
             return
             
-        self.user_data["api_usage"]["ma"] = self.user_data.get("api_usage", {}).get("ma", 0) + 1
+        extra_q = self.newsapi_q_entry.get().strip()
+        lang = self.newsapi_lang_entry.get().strip()
+        from_date = self.newsapi_date_entry.get().strip()
+        
+        for widget in self.newsapi_frame.winfo_children():
+            widget.destroy()
+        ctk.CTkLabel(self.newsapi_frame, text="Λήψη δεδομένων NewsAPI...", text_color="orange").pack(pady=20)
+        threading.Thread(target=self._fetch_newsapi_thread, args=(stock_name, api_key, extra_q, lang, from_date), daemon=True).start()
+
+    def _fetch_newsapi_thread(self, query, api_key, extra_q, lang, from_date):
+        news_data = stock_fetcher.get_newsapi_data(query, api_key, extra_q, lang, from_date)
+        self.after(0, self._update_newsapi_ui, news_data)
+
+    def _update_newsapi_ui(self, news_data):
+        for widget in self.newsapi_frame.winfo_children():
+            widget.destroy()
+        self.newsapi_checkboxes = []
+
+        if news_data.get("error"):
+            self.status_main.configure(text=f"⚠️ Σφάλμα NewsAPI: {news_data.get('error')}", text_color="orange")
+            ctk.CTkLabel(self.newsapi_frame, text=f"Σφάλμα: {news_data.get('error')}", text_color="red").pack(pady=20)
+            self.newsapi_var.set(0)
+            return
+            
+        self.user_data["api_usage"]["newsapi"] = self.user_data.get("api_usage", {}).get("newsapi", 0) + 1
         save_data(self.user_data)
         self._sync_api_usage()
-        
-        agg_sentiment = ma_data.get("agg_sentiment", "N/A")
-        self.current_ma_agg = agg_sentiment
-        if agg_sentiment != "N/A":
-            ctk.CTkLabel(self.ma_news_frame, text=f"📊 Συγκεντρωτικό Sentiment (30 ημερών): {agg_sentiment}", font=ctk.CTkFont(weight="bold", size=13), text_color="#2ca02c").pack(anchor="w", pady=(0, 10))
 
-        news_list = ma_data.get("news", [])
+        news_list = news_data.get("news", [])
         if not news_list:
-            ctk.CTkLabel(self.ma_news_frame, text="Δεν βρέθηκαν ειδήσεις στο MarketAux.", text_color="gray").pack(pady=20)
+            ctk.CTkLabel(self.newsapi_frame, text="Δεν βρέθηκαν ειδήσεις στο NewsAPI.", text_color="gray").pack(pady=20)
             return
 
         for article in news_list:
-            f = ctk.CTkFrame(self.ma_news_frame, fg_color="transparent")
+            f = ctk.CTkFrame(self.newsapi_frame, fg_color="transparent")
             f.pack(fill="x", pady=2, padx=2)
             
             chk_var = ctk.IntVar(value=0)
             cb = ctk.CTkCheckBox(f, text="", variable=chk_var, width=20)
             cb.pack(side="left", anchor="n", pady=(2, 0), padx=(0, 5))
-            self.ma_checkboxes.append((chk_var, article))
+            self.newsapi_checkboxes.append((chk_var, article))
             
             text_f = ctk.CTkFrame(f, fg_color="transparent")
             text_f.pack(side="left", fill="x", expand=True)
@@ -861,22 +876,16 @@ class App(ctk.CTk):
             url = article.get("url", "")
             source = article.get("source", "")
             date = article.get("date", "")
-            sentiment = article.get("sentiment", "N/A")
             
             title_lbl = ctk.CTkLabel(text_f, text=f"📰 {title}", font=ctk.CTkFont(weight="bold", size=12), text_color="#1f77b4", cursor="hand2", anchor="w", justify="left", wraplength=550)
             title_lbl.pack(anchor="w")
             if url:
                 title_lbl.bind("<Button-1>", lambda e, u=url: webbrowser.open(u))
                 
-            ctk.CTkLabel(text_f, text=f"Πηγή: {source} | Ημ/νία: {date} | Sentiment Score: {sentiment}", font=ctk.CTkFont(size=10), text_color="gray", anchor="w").pack(anchor="w")
+            ctk.CTkLabel(text_f, text=f"Πηγή: {source} | Ημ/νία: {date}", font=ctk.CTkFont(size=10), text_color="gray", anchor="w").pack(anchor="w")
             
             desc = article.get("description", "")
-            highlights = article.get("highlights", [])
-            
-            if highlights:
-                hl_text = "✨ " + "\n✨ ".join(highlights)
-                ctk.CTkLabel(text_f, text=hl_text, font=ctk.CTkFont(size=11, slant="italic"), anchor="w", justify="left", wraplength=550).pack(anchor="w", pady=(0, 4))
-            elif desc:
+            if desc:
                 ctk.CTkLabel(text_f, text=desc, font=ctk.CTkFont(size=11), anchor="w", justify="left", wraplength=550).pack(anchor="w", pady=(0, 4))
 
     def on_time_period_change(self, selected_period):
@@ -906,13 +915,13 @@ class App(ctk.CTk):
             self._trigger_av_fetch()
         if self.fh_var.get() == 1:
             self._trigger_fh_fetch()
-        if hasattr(self, 'ma_var') and self.ma_var.get() == 1:
-            self._trigger_ma_fetch()
-        elif hasattr(self, 'ma_news_frame'):
-            for widget in self.ma_news_frame.winfo_children():
+        if hasattr(self, 'newsapi_var') and self.newsapi_var.get() == 1:
+            self._trigger_newsapi_fetch()
+        elif hasattr(self, 'newsapi_frame'):
+            for widget in self.newsapi_frame.winfo_children():
                 widget.destroy()
-            ctk.CTkLabel(self.ma_news_frame, text="Ενεργοποιήστε το MarketAux αριστερά για προβολή.", text_color="gray").pack(pady=20)
-            self.ma_checkboxes = []
+            ctk.CTkLabel(self.newsapi_frame, text="Ενεργοποιήστε το NewsAPI αριστερά για προβολή.", text_color="gray").pack(pady=20)
+            self.newsapi_checkboxes = []
 
     def _fetch_overview_data_thread(self, stock_data):
         yahoo_sym = stock_data.get("Yahoo")
@@ -941,6 +950,11 @@ class App(ctk.CTk):
             self.l_macd.configure(text=res_yahoo.get("macd", "N/A"))
             self.l_sma20.configure(text=res_yahoo.get("sma20", "N/A"))
             self.l_sma50.configure(text=res_yahoo.get("sma50", "N/A"))
+            self.l_rev_growth.configure(text=res_yahoo.get("rev_growth", "N/A"))
+            self.l_roe.configure(text=res_yahoo.get("roe", "N/A"))
+            self.l_op_margin.configure(text=res_yahoo.get("op_margin", "N/A"))
+            self.l_dte.configure(text=res_yahoo.get("dte", "N/A"))
+            self.l_fcf.configure(text=res_yahoo.get("fcf", "N/A"))
             if "df" in res_yahoo:
                 self.draw_chart(res_yahoo["df"])
                 
@@ -1079,6 +1093,11 @@ class App(ctk.CTk):
         self.l_macd.configure(text=result["macd"])
         self.l_sma20.configure(text=result["sma20"])
         self.l_sma50.configure(text=result["sma50"])
+        self.l_rev_growth.configure(text=result.get("rev_growth", "N/A"))
+        self.l_roe.configure(text=result.get("roe", "N/A"))
+        self.l_op_margin.configure(text=result.get("op_margin", "N/A"))
+        self.l_dte.configure(text=result.get("dte", "N/A"))
+        self.l_fcf.configure(text=result.get("fcf", "N/A"))
         if "df" in result:
             self.draw_chart(result["df"])
         
@@ -1107,26 +1126,20 @@ class App(ctk.CTk):
         if self.fh_var.get() == 1 and getattr(self, 'current_fh_context', ""):
             context += self.current_fh_context
 
-        # Δεδομένα MarketAux (News & Sentiment)
-        if hasattr(self, 'ma_var') and self.ma_var.get() == 1 and hasattr(self, 'ma_checkboxes'):
-            ma_selected = []
-            if getattr(self, 'current_ma_agg', None) and self.current_ma_agg != "N/A":
-                context += f"\n\n[MARKETAUX - ΣΥΓΚΕΝΤΡΩΤΙΚΟ SENTIMENT 30 ΗΜΕΡΩΝ]\nΒαθμολογία: {self.current_ma_agg}\n"
-                
-            for chk_var, article in self.ma_checkboxes:
+        # Δεδομένα NewsAPI
+        if hasattr(self, 'newsapi_var') and self.newsapi_var.get() == 1 and hasattr(self, 'newsapi_checkboxes'):
+            newsapi_selected = []
+            for chk_var, article in self.newsapi_checkboxes:
                 if chk_var.get() == 1:
                     title = " ".join(article.get('title', '').split())
                     desc = article.get('description', '')
-                    highlights = article.get('highlights', [])
-                    content = " ".join(highlights) if highlights else desc
-                    content = " ".join(content.split())
+                    content = " ".join(desc.split()) if desc else ""
                     
-                    sentiment = article.get('sentiment', 'N/A')
-                    ma_url = article.get('url', '')
-                    ma_selected.append(f"• {title} (Sentiment: {sentiment}): {content}")
-                    used_sources.append(f"MarketAux Είδηση: {title}" + (f" ({ma_url})" if ma_url else ""))
-            if ma_selected:
-                context += "\n\n[MARKETAUX - ΕΙΔΗΣΕΙΣ & HIGHLIGHTS]\n" + "\n".join(ma_selected)
+                    n_url = article.get('url', '')
+                    newsapi_selected.append(f"• {title}: {content}")
+                    used_sources.append(f"NewsAPI Είδηση: {title}" + (f" ({n_url})" if n_url else ""))
+            if newsapi_selected:
+                context += "\n\n[NEWSAPI.ORG - ΕΙΔΗΣΕΙΣ]\n" + "\n".join(newsapi_selected)
 
         # Ανάγνωση επιλεγμένων Custom URLs & Εταιρικού Site
         selected_urls = []
@@ -1580,7 +1593,7 @@ class App(ctk.CTk):
         self.user_data["api_key"] = self.api_key_entry.get()
         self.user_data["av_api_key"] = self.av_key_entry.get()
         self.user_data["finnhub_api_key"] = self.finnhub_key_entry.get()
-        self.user_data["marketaux_api_key"] = self.ma_key_entry.get()
+        self.user_data["newsapi_key"] = self.newsapi_key_entry.get()
         save_data(self.user_data)
         self.status_label.configure(text="✅ Αποθηκεύτηκε!", text_color="green")
         if self.ai_provider_menu.get() == "Gemini (Cloud)":
@@ -1689,10 +1702,10 @@ class App(ctk.CTk):
         ctk.CTkLabel(self.news_frame, text="Οι ειδήσεις θα εμφανιστούν εδώ.", text_color="gray").pack(pady=20)
         self.news_checkboxes = []
 
-        for widget in self.ma_news_frame.winfo_children():
+        for widget in self.newsapi_frame.winfo_children():
             widget.destroy()
-        ctk.CTkLabel(self.ma_news_frame, text="Ενεργοποιήστε το MarketAux αριστερά για προβολή.", text_color="gray").pack(pady=20)
-        self.ma_checkboxes = []
+        ctk.CTkLabel(self.newsapi_frame, text="Ενεργοποιήστε το NewsAPI αριστερά για προβολή.", text_color="gray").pack(pady=20)
+        self.newsapi_checkboxes = []
         
         for widget in self.pages_frame.winfo_children():
             widget.destroy()
@@ -1702,7 +1715,8 @@ class App(ctk.CTk):
         labels_to_reset = [
             self.l_yahoo, self.l_ft, self.l_inv, self.l_mcap, self.l_pe, self.l_div, self.l_beta,
             self.l_rsi, self.l_macd, self.l_sma20, self.l_sma50, self.l_av_pe, self.l_av_div, self.l_av_eps,
-            self.l_fh_cur, self.l_fh_open, self.l_fh_high, self.l_fh_low
+            self.l_fh_cur, self.l_fh_open, self.l_fh_high, self.l_fh_low,
+            self.l_rev_growth, self.l_roe, self.l_op_margin, self.l_dte, self.l_fcf
         ]
         for lbl in labels_to_reset:
             lbl.configure(text="---")
@@ -1718,13 +1732,40 @@ class App(ctk.CTk):
             
         self.current_av_context = ""
         self.current_fh_context = ""
-        self.current_ma_agg = None
         
         self.overview_title.configure(text="Επισκόπηση Επιλεγμένης Μετοχής")
         self.website_url = ""
         self.website_link_label.pack_forget()
         self.website_cb.pack_forget()
         self.status_label.configure(text="✅ Τα προσωρινά δεδομένα διαγράφηκαν!", text_color="green")
+
+    def clear_all_data(self):
+        confirm = messagebox.askyesno("Επιβεβαίωση", "Είστε σίγουροι ότι θέλετε να διαγράψετε ΟΛΑ τα δεδομένα της εφαρμογής;\n\nΑυτή η ενέργεια θα διαγράψει το Ιστορικό, την Watchlist, τα API Keys και τα αποθηκευμένα URLs και δεν μπορεί να αναιρεθεί.")
+        if confirm:
+            self.user_data = {
+                "api_key": "", "av_api_key": "", "finnhub_api_key": "", "newsapi_key": "",
+                "watchlist": [], "urls": [], "history": [],
+                "api_usage": {"date": datetime.date.today().isoformat(), "av": 0, "fh": 0, "newsapi": 0}
+            }
+            save_data(self.user_data)
+            
+            self.api_key_entry.delete(0, 'end')
+            self.av_key_entry.delete(0, 'end')
+            self.finnhub_key_entry.delete(0, 'end')
+            self.newsapi_key_entry.delete(0, 'end')
+            
+            for row in self.url_rows:
+                row["frame"].destroy()
+            self.url_rows = []
+            
+            self.update_history_ui()
+            self.update_dropdown()
+            self.update_watchlist_table()
+            
+            self.clear_cache()
+            self._sync_api_usage()
+            
+            self.status_label.configure(text="✅ Όλα τα δεδομένα διαγράφηκαν!", text_color="green")
 
     def _select_and_fetch(self, name):
         self.stock_var.set(name)

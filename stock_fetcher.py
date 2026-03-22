@@ -6,6 +6,7 @@ import cloudscraper
 from bs4 import BeautifulSoup
 from ddgs import DDGS
 import requests
+import trafilatura
 
 logger = logging.getLogger(__name__)
 
@@ -49,6 +50,36 @@ def get_stock_data(symbol, period="6mo"):
         website = info.get("website", "")
         domain = website.replace("https://", "").replace("http://", "").replace("www.", "").split('/')[0] if website else ""
         
+        rev_growth = info.get("revenueGrowth")
+        roe = info.get("returnOnEquity")
+        dte = info.get("debtToEquity")
+        fcf = info.get("freeCashflow")
+        op_margin = info.get("operatingMargins")
+
+        forward_pe = info.get("forwardPE", "N/A")
+        ev_ebitda = info.get("enterpriseToEbitda", "N/A")
+        pb_ratio = info.get("priceToBook", "N/A")
+        
+        # Υπολογισμός Debt / EBITDA (αν υπάρχουν)
+        total_debt = info.get("totalDebt")
+        ebitda = info.get("ebitda")
+        debt_ebitda = (total_debt / ebitda) if isinstance(total_debt, (int, float)) and isinstance(ebitda, (int, float)) and ebitda != 0 else "N/A"
+
+        fmt_rev_growth = f"{rev_growth * 100:.2f}%" if isinstance(rev_growth, (int, float)) else "N/A"
+        fmt_roe = f"{roe * 100:.2f}%" if isinstance(roe, (int, float)) else "N/A"
+        fmt_op_margin = f"{op_margin * 100:.2f}%" if isinstance(op_margin, (int, float)) else "N/A"
+        fmt_dte = f"{dte:.2f}" if isinstance(dte, (int, float)) else "N/A"
+        
+        fmt_fwd_pe = f"{forward_pe:.2f}" if isinstance(forward_pe, (int, float)) else "N/A"
+        fmt_ev_ebitda = f"{ev_ebitda:.2f}" if isinstance(ev_ebitda, (int, float)) else "N/A"
+        fmt_pb = f"{pb_ratio:.2f}" if isinstance(pb_ratio, (int, float)) else "N/A"
+        fmt_debt_ebitda = f"{debt_ebitda:.2f}" if isinstance(debt_ebitda, (int, float)) else "N/A"
+
+        if isinstance(fcf, (int, float)):
+            fmt_fcf = f"${fcf/1e9:.2f}B" if abs(fcf) >= 1e9 else f"${fcf/1e6:.2f}M"
+        else:
+            fmt_fcf = "N/A"
+
         res = {
             "price": f"${cp:.2f} ({pct_change:.2f}%)",
             "mcap": f"${mcap/1e9:.2f}B" if mcap >= 1e9 else f"${mcap/1e6:.2f}M",
@@ -59,10 +90,19 @@ def get_stock_data(symbol, period="6mo"):
             "macd": f"{latest.get('MACD_12_26_9'):.2f}" if pd.notna(latest.get('MACD_12_26_9')) else "N/A",
             "sma20": f"{latest.get('SMA_20'):.2f}" if pd.notna(latest.get('SMA_20')) else "N/A",
             "sma50": f"{latest.get('SMA_50'):.2f}" if pd.notna(latest.get('SMA_50')) else "N/A",
+            "rev_growth": fmt_rev_growth,
+            "roe": fmt_roe,
+            "op_margin": fmt_op_margin,
+            "dte": fmt_dte,
+            "fcf": fmt_fcf,
+            "forward_pe": fmt_fwd_pe,
+            "ev_ebitda": fmt_ev_ebitda,
+            "pb_ratio": fmt_pb,
+            "debt_ebitda": fmt_debt_ebitda,
         }
         res["domain"] = domain
         res["website"] = website
-        res["context"] = f"[ΒΑΣΙΚΑ ΔΕΔΟΜΕΝΑ & ΤΕΧΝΙΚΟΙ ΔΕΙΚΤΕΣ]\nΤιμή Κλεισίματος: {cp:.2f} | P/E: {pe}\nRSI(14): {res['rsi']} | MACD: {res['macd']} | SMA20: {res['sma20']} | SMA50: {res['sma50']}"
+        res["context"] = f"[ΒΑΣΙΚΑ ΔΕΔΟΜΕΝΑ & ΤΕΧΝΙΚΟΙ ΔΕΙΚΤΕΣ]\nΤιμή Κλεισίματος: {cp:.2f} | P/E: {pe}\nRSI(14): {res['rsi']} | MACD: {res['macd']} | SMA20: {res['sma20']} | SMA50: {res['sma50']}\n\n[ΟΙΚΟΝΟΜΙΚΗ ΥΓΕΙΑ & ΑΠΟΔΟΣΗ]\nRevenue Growth: {fmt_rev_growth} | ROE: {fmt_roe} | Operating Margin: {fmt_op_margin}\nDebt to Equity: {fmt_dte} | Free Cash Flow: {fmt_fcf}\n\n[ΑΠΟΤΙΜΗΣΗ & ΕΠΙΠΛΕΟΝ ΔΕΙΚΤΕΣ]\nForward P/E: {fmt_fwd_pe} | EV/EBITDA: {fmt_ev_ebitda} | Price/Book: {fmt_pb} | Debt/EBITDA: {fmt_debt_ebitda}"
         res["df"] = hist
         return res
     except Exception as e:
@@ -244,91 +284,54 @@ def get_finnhub_data(symbol, api_key):
         logger.error(f"Σφάλμα Finnhub: {e}")
         return {"error": str(e)}
 
-def get_marketaux_data(symbol, api_key, industry="", country=""):
-    """Αντλεί ειδήσεις, sentiment και highlights από το MarketAux."""
+def get_newsapi_data(query, api_key, extra_query="", language="", from_date=""):
+    """Αντλεί ειδήσεις από το NewsAPI.org."""
     if not api_key:
         return {"error": "Missing API Key"}
     try:
-        # 1. Συγκεντρωτικό Sentiment (Μόνο όταν ψάχνουμε συγκεκριμένη μετοχή)
-        agg_sentiment = "N/A"
-        if symbol and not industry:
-            try:
-                agg_url = f"https://api.marketaux.com/v1/entity/stats/aggregation?symbols={symbol}&api_token={api_key}"
-                agg_resp = requests.get(agg_url, timeout=10).json()
-                if "data" in agg_resp and len(agg_resp["data"]) > 0:
-                    agg_sentiment = str(agg_resp["data"][0].get("sentiment_avg", "N/A"))
-            except Exception:
-                pass
-
-        # 2. Ειδήσεις & Highlights
-        url = f"https://api.marketaux.com/v1/news/all?api_token={api_key}"
-        if industry: url += f"&industries={industry}"
-        if country: url += f"&countries={country}"
-        if symbol and not industry: # Αν δεν δοθεί κλάδος, στοχεύουμε τη μετοχή
-            url += f"&symbols={symbol}&filter_entities=true"
+        q = query
+        if extra_query:
+            q = f"{query} AND {extra_query}"
             
-        resp = requests.get(url, timeout=25)
+        url = f"https://newsapi.org/v2/everything?q={q}&apiKey={api_key}&pageSize=10&sortBy=relevancy"
+        if language:
+            url += f"&language={language}"
+        if from_date:
+            url += f"&from={from_date}"
+            
+        resp = requests.get(url, timeout=15)
         data = resp.json()
-        if "error" in data:
-            return {"error": data["error"].get("message", "Σφάλμα MarketAux")}
+        if data.get("status") == "error":
+            return {"error": data.get("message", "Σφάλμα NewsAPI")}
         
         news_list = []
-        for article in data.get("data", [])[:10]:
-            sentiment = "N/A"
-            highlights = []
-            for entity in article.get("entities", []):
-                api_sym = entity.get("symbol", "").upper()
-                # Αναγνώριση του συμβόλου ακόμα κι αν έχει κατάληξη χρηματιστηρίου (π.χ. CATX.US)
-                if symbol and (api_sym == symbol.upper() or api_sym.startswith(f"{symbol.upper()}.")):
-                    sentiment = entity.get("sentiment_score")
-                    highlights = [h.get("highlight") for h in entity.get("highlights", []) if h.get("highlight")]
-                    break
-                    
+        for article in data.get("articles", []):
             news_list.append({
                 "title": article.get("title", "Χωρίς Τίτλο"),
                 "description": article.get("description", ""),
-                "highlights": highlights,
                 "url": article.get("url", ""),
-                "source": article.get("source", ""),
-                "date": article.get("published_at", "")[:10],
-                "sentiment": sentiment
+                "source": article.get("source", {}).get("name", "Άγνωστη Πηγή"),
+                "date": article.get("publishedAt", "")[:10]
             })
-        return {"news": news_list, "agg_sentiment": agg_sentiment}
+        return {"news": news_list}
     except requests.exceptions.Timeout:
-        logger.error(f"Timeout MarketAux για {symbol}")
-        return {"error": "Το MarketAux άργησε να απαντήσει (Timeout). Δοκιμάστε ξανά."}
+        logger.error(f"Timeout NewsAPI για {query}")
+        return {"error": "Το NewsAPI άργησε να απαντήσει (Timeout). Δοκιμάστε ξανά."}
     except Exception as e:
-        logger.error(f"Σφάλμα MarketAux: {e}")
+        logger.error(f"Σφάλμα NewsAPI: {e}")
         return {"error": str(e)}
 
 def scrape_url_text(url):
     """Αντλεί το περιεχόμενο από ένα custom URL."""
     try:
-        scraper = cloudscraper.create_scraper()
-        resp = scraper.get(url, timeout=15)
-        soup = BeautifulSoup(resp.text, 'html.parser')
-        
-        # Αφαιρούμε άχρηστα στοιχεία (scripts, styles, μενού, υποσέλιδα, διαφημίσεις)
-        for element in soup(["script", "style", "nav", "header", "footer", "aside", "form", "noscript", "iframe", "button", "meta", "svg"]):
-            element.extract()
-            
-        # Αφαίρεση στοιχείων βάσει κλάσης (class) ή ID που συχνά περιέχουν "θόρυβο"
-        bad_keywords = ['ad', 'ads', 'advert', 'promo', 'sidebar', 'menu', 'cookie', 'popup', 'newsletter', 'social', 'share', 'comment']
-        for element in soup.find_all(class_=lambda x: x and any(kw in str(x).lower() for kw in bad_keywords)):
-            element.extract()
-        for element in soup.find_all(id=lambda x: x and any(kw in str(x).lower() for kw in bad_keywords)):
-            element.extract()
-            
-        paragraphs = soup.find_all('p')
-        
-        # Κρατάμε μόνο παραγράφους με ουσιαστικό κείμενο (π.χ. > 40 χαρακτήρες)
-        valid_texts = [p.get_text(strip=True) for p in paragraphs if len(p.get_text(strip=True)) > 40]
-        
-        # Αφαίρεση περιττών κενών και νέων γραμμών για μέγιστη συμπύκνωση (εξοικονόμηση tokens)
-        raw_text = " ".join(valid_texts)
-        text = " ".join(raw_text.split())
-        
-        return text[:8000] # Αυξημένο όριο χαρακτήρων για εξαγωγή περισσότερων στοιχείων (περίπου 2-3k tokens)
+        downloaded = trafilatura.fetch_url(url)
+        if downloaded is None:
+            return ""
+        text = trafilatura.extract(downloaded, include_comments=False, include_tables=False)
+        if text:
+            # Περιορισμός μεγέθους για εξοικονόμηση tokens
+            return text[:8000] 
+        return ""
     except Exception as e:
         logger.error(f"Σφάλμα ανάγνωσης από το URL {url}: {e}")
         return ""

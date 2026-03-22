@@ -7,6 +7,21 @@
 
 ---
 
+## 📸 Στιγμιότυπα Οθόνης (Screenshots)
+
+<p align="center">
+  <img src="assets/main_dashboard.png" width="800" alt="Main Dashboard"><br>
+  <i>(Το κεντρικό περιβάλλον της εφαρμογής με γραφήματα, ειδήσεις και AI ανάλυση)</i>
+</p>
+
+<p align="center">
+  <img src="assets/chart_view.png" width="390" alt="Αναλυτικό Γράφημα">
+  <img src="assets/ai_analysis.png" width="390" alt="AI Report">
+  <img src="assets/dashboard.png" width="390" alt="Dashboard">
+  <img src="assets/news.png" width="390" alt="News Feeds">
+  <img src="assets/sites.png" width="390" alt="Sites">
+</p>
+
 ## ✨ Κύρια Χαρακτηριστικά
 
 - **Σύγχρονο UI**: Σκοτεινό θέμα (Dark Mode) βασισμένο στο `CustomTkinter` με ανεξάρτητη κύλιση (split-scroll) στηλών, κουμπιά γρήγορης επικόλλησης (Clipboard) και λειτουργία Focus Mode (☰).

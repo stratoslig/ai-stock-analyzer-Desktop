@@ -9,6 +9,7 @@ __pycache__/
 build/
 dist/
 *.spec
+!desktop_app.spec
 
 # Προσωπικά Δεδομένα & Εξαγωγές
 user_data.json

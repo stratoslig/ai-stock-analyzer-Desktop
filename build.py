@@ -5,52 +5,16 @@ import tarfile
 import sys
 import subprocess
 
-# Κοινές "κρυφές" εξαρτήσεις για το PyInstaller, απαραίτητες λόγω του lazy-loading
-hidden_imports = [
-    '--hidden-import=yfinance',
-    '--hidden-import=pandas',
-    '--hidden-import=PyPDF2',
-    '--hidden-import=matplotlib.backends.backend_tkagg',
-    '--hidden-import=matplotlib.widgets',
-    '--hidden-import=sklearn',
-    '--hidden-import=sklearn.utils._cython_blas',
-    '--hidden-import=sklearn.neighbors._typedefs',
-    '--hidden-import=sklearn.neighbors._quad_tree',
-    '--hidden-import=openpyxl',
-    '--hidden-import=dateutil.parser',
-    '--hidden-import=pkg_resources.py2_warn',
-    '--hidden-import=lxml',
-    '--hidden-import=google.generativeai',
-    '--hidden-import=google.ai.generativelanguage',
-    '--hidden-import=docx',
-]
-
-# Λίστα για τη συλλογή ολόκληρων των δεδομένων των βιβλιοθηκών που το απαιτούν
-collect_data = [
-    '--collect-data=pandas_ta',
-    '--collect-data=trafilatura',
-    '--collect-data=cloudscraper',
-    '--collect-data=ddgs',
-    '--collect-data=feedparser',
-]
+# Η παραμετροποίηση του build βρίσκεται πλέον εξ ολοκλήρου στο αρχείο desktop_app.spec
 
 def build_windows():
-    print("🚀 Building for Windows (.exe)...")
+    print("🚀 Building for Windows (.exe) using .spec file...")
     print("⏳ Please wait, this may take 1-3 minutes.\n")
     
-    pyinstaller_args = [
-        'desktop_app.py',
-        '--name=AI Stock Analyzer Desktop',
-        '--noconsole',
-        '--icon=icon.ico',
-        '--add-data=icon.ico;.',
-        '--collect-all=customtkinter',
+    PyInstaller.__main__.run([
+        'desktop_app.spec',
         '--clean'
-    ]
-    pyinstaller_args.extend(hidden_imports)
-    pyinstaller_args.extend(collect_data)
-
-    PyInstaller.__main__.run(pyinstaller_args)
+    ])
 
     print("\n✅ PyInstaller build completed successfully!")
     
@@ -58,7 +22,7 @@ def build_windows():
     app_dir = os.path.join('dist', 'AI Stock Analyzer Desktop')
     readme_path = 'readme.txt'
     
-    release_tag = os.environ.get('RELEASE_TAG', 'v1.3')
+    release_tag = os.environ.get('RELEASE_TAG', 'v1.4')
     zip_name = os.path.join('dist', f'AI_Stock_Analyzer_Pro_{release_tag}.zip')
     
     with zipfile.ZipFile(zip_name, 'w', zipfile.ZIP_DEFLATED) as zipf:
@@ -73,32 +37,19 @@ def build_windows():
     print(f"🎉 Final file '{zip_name}' is ready for GitHub upload!")
 
 def build_macos():
-    print("🚀 Building for macOS (.dmg)...")
+    print("🚀 Building for macOS (.dmg) using .spec file...")
     print("⏳ Please wait, this may take 1-3 minutes.\n")
     
-    icon_path = 'icon.icns'
-    pyinstaller_args = [
-        'desktop_app.py',
-        '--name=AI Stock Analyzer Desktop',
-        '--windowed',
-        '--collect-all=customtkinter',
+    PyInstaller.__main__.run([
+        'desktop_app.spec',
         '--clean'
-    ]
-    if os.path.exists(icon_path):
-        print(f"🍏 Found '{icon_path}', adding it to the build.")
-        pyinstaller_args.extend(['--icon=' + icon_path, '--add-data=' + icon_path + ':.'])
-    else:
-        print(f"⚠️ '{icon_path}' not found. Building without a custom icon.")
-
-    pyinstaller_args.extend(hidden_imports)
-    pyinstaller_args.extend(collect_data)
-    PyInstaller.__main__.run(pyinstaller_args)
+    ])
     
     print("\n✅ PyInstaller build completed successfully!")
     print("\n📦 Creating .dmg file...")
     
     app_path = os.path.join('dist', 'AI Stock Analyzer Desktop.app')
-    release_tag = os.environ.get('RELEASE_TAG', 'v1.3')
+    release_tag = os.environ.get('RELEASE_TAG', 'v1.4')
     dmg_name = f'AI_Stock_Analyzer_Pro_{release_tag}.dmg'
     dmg_path = os.path.join('dist', dmg_name)
     
@@ -117,20 +68,13 @@ def build_macos():
         sys.exit(1)
 
 def build_linux():
-    print("🚀 Building for Linux...")
+    print("🚀 Building for Linux using .spec file...")
     print("⏳ Please wait, this may take 1-3 minutes.\n")
     
-    pyinstaller_args = [
-        'desktop_app.py',
-        '--name=AI Stock Analyzer Desktop',
-        '--windowed',
-        '--collect-all=customtkinter',
+    PyInstaller.__main__.run([
+        'desktop_app.spec',
         '--clean'
-    ]
-    pyinstaller_args.extend(hidden_imports)
-    pyinstaller_args.extend(collect_data)
-    
-    PyInstaller.__main__.run(pyinstaller_args)
+    ])
     
     print("\n✅ PyInstaller build completed successfully!")
     print("\n📦 Creating .tar.gz file for distribution...")
@@ -138,7 +82,7 @@ def build_linux():
     app_dir = os.path.join('dist', 'AI Stock Analyzer Desktop')
     readme_path = 'readme.txt'
     
-    release_tag = os.environ.get('RELEASE_TAG', 'v1.3')
+    release_tag = os.environ.get('RELEASE_TAG', 'v1.4')
     tar_name = os.path.join('dist', f'AI_Stock_Analyzer_Pro_{release_tag}_Linux.tar.gz')
     
     with tarfile.open(tar_name, "w:gz") as tar:

@@ -8,6 +8,18 @@
 
 ![Python Version](https://img.shields.io/badge/python-3.8%2B-blue)
 ![License](https://img.shields.io/badge/license-MIT-green)
+![GitHub Release](https://img.shields.io/github/v/release/stratoslig/ai-stock-analyzer-Desktop?color=success)
+![GitHub Downloads](https://img.shields.io/github/downloads/stratoslig/ai-stock-analyzer-Desktop/total?color=blueviolet)
+![Windows](https://img.shields.io/badge/Windows-0078D6?logo=windows&logoColor=white)
+![macOS](https://img.shields.io/badge/macOS-000000?logo=apple&logoColor=white)
+![Linux](https://img.shields.io/badge/Linux-FCC624?logo=linux&logoColor=black)
+![UI](https://img.shields.io/badge/UI-CustomTkinter-1f538d)
+![GitHub Release](https://img.shields.io/github/v/release/stratoslig/ai-stock-analyzer-Desktop?color=success)
+![GitHub Downloads](https://img.shields.io/github/downloads/stratoslig/ai-stock-analyzer-Desktop/total?color=blueviolet)
+![Windows](https://img.shields.io/badge/Windows-0078D6?logo=windows&logoColor=white)
+![macOS](https://img.shields.io/badge/macOS-000000?logo=apple&logoColor=white)
+![Linux](https://img.shields.io/badge/Linux-FCC624?logo=linux&logoColor=black)
+![UI](https://img.shields.io/badge/UI-CustomTkinter-1f538d)
 
 ---
 

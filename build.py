@@ -5,11 +5,25 @@ import tarfile
 import sys
 import subprocess
 
+# Κοινές "κρυφές" εξαρτήσεις για το PyInstaller, απαραίτητες λόγω του lazy-loading
+hidden_imports = [
+    '--hidden-import=yfinance',
+    '--hidden-import=pandas',
+    '--hidden-import=pandas_ta',
+    '--hidden-import=trafilatura',
+    '--hidden-import=PyPDF2',
+    '--hidden-import=matplotlib.backends.backend_tkagg',
+    '--hidden-import=matplotlib.widgets',
+    '--hidden-import=sklearn',
+    '--hidden-import=openpyxl',
+    '--hidden-import=dateutil.parser',
+]
+
 def build_windows():
     print("🚀 Building for Windows (.exe)...")
     print("⏳ Please wait, this may take 1-3 minutes.\n")
-
-    PyInstaller.__main__.run([
+    
+    pyinstaller_args = [
         'desktop_app.py',
         '--name=AI Stock Analyzer Desktop',
         '--noconsole',
@@ -17,7 +31,10 @@ def build_windows():
         '--add-data=icon.ico;.',
         '--collect-all=customtkinter',
         '--clean'
-    ])
+    ]
+    pyinstaller_args.extend(hidden_imports)
+
+    PyInstaller.__main__.run(pyinstaller_args)
 
     print("\n✅ PyInstaller build completed successfully!")
     
@@ -57,6 +74,7 @@ def build_macos():
     else:
         print(f"⚠️ '{icon_path}' not found. Building without a custom icon.")
 
+    pyinstaller_args.extend(hidden_imports)
     PyInstaller.__main__.run(pyinstaller_args)
     
     print("\n✅ PyInstaller build completed successfully!")
@@ -85,13 +103,16 @@ def build_linux():
     print("🚀 Building for Linux...")
     print("⏳ Please wait, this may take 1-3 minutes.\n")
     
-    PyInstaller.__main__.run([
+    pyinstaller_args = [
         'desktop_app.py',
         '--name=AI Stock Analyzer Desktop',
         '--windowed',
         '--collect-all=customtkinter',
         '--clean'
-    ])
+    ]
+    pyinstaller_args.extend(hidden_imports)
+    
+    PyInstaller.__main__.run(pyinstaller_args)
     
     print("\n✅ PyInstaller build completed successfully!")
     print("\n📦 Creating .tar.gz file for distribution...")

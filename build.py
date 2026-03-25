@@ -13,9 +13,16 @@ hidden_imports = [
     '--hidden-import=matplotlib.backends.backend_tkagg',
     '--hidden-import=matplotlib.widgets',
     '--hidden-import=sklearn',
+    '--hidden-import=sklearn.utils._cython_blas',
+    '--hidden-import=sklearn.neighbors._typedefs',
+    '--hidden-import=sklearn.neighbors._quad_tree',
     '--hidden-import=openpyxl',
     '--hidden-import=dateutil.parser',
     '--hidden-import=pkg_resources.py2_warn',
+    '--hidden-import=lxml',
+    '--hidden-import=google.generativeai',
+    '--hidden-import=google.ai.generativelanguage',
+    '--hidden-import=docx',
 ]
 
 # Λίστα για τη συλλογή ολόκληρων των δεδομένων των βιβλιοθηκών που το απαιτούν
@@ -23,6 +30,8 @@ collect_data = [
     '--collect-data=pandas_ta',
     '--collect-data=trafilatura',
     '--collect-data=cloudscraper',
+    '--collect-data=ddgs',
+    '--collect-data=feedparser',
 ]
 
 def build_windows():

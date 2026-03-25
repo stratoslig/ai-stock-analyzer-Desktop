@@ -9,14 +9,20 @@ import subprocess
 hidden_imports = [
     '--hidden-import=yfinance',
     '--hidden-import=pandas',
-    '--hidden-import=pandas_ta',
-    '--hidden-import=trafilatura',
     '--hidden-import=PyPDF2',
     '--hidden-import=matplotlib.backends.backend_tkagg',
     '--hidden-import=matplotlib.widgets',
     '--hidden-import=sklearn',
     '--hidden-import=openpyxl',
     '--hidden-import=dateutil.parser',
+    '--hidden-import=pkg_resources.py2_warn',
+]
+
+# Λίστα για τη συλλογή ολόκληρων των δεδομένων των βιβλιοθηκών που το απαιτούν
+collect_data = [
+    '--collect-data=pandas_ta',
+    '--collect-data=trafilatura',
+    '--collect-data=cloudscraper',
 ]
 
 def build_windows():
@@ -33,6 +39,7 @@ def build_windows():
         '--clean'
     ]
     pyinstaller_args.extend(hidden_imports)
+    pyinstaller_args.extend(collect_data)
 
     PyInstaller.__main__.run(pyinstaller_args)
 
@@ -75,6 +82,7 @@ def build_macos():
         print(f"⚠️ '{icon_path}' not found. Building without a custom icon.")
 
     pyinstaller_args.extend(hidden_imports)
+    pyinstaller_args.extend(collect_data)
     PyInstaller.__main__.run(pyinstaller_args)
     
     print("\n✅ PyInstaller build completed successfully!")
@@ -111,6 +119,7 @@ def build_linux():
         '--clean'
     ]
     pyinstaller_args.extend(hidden_imports)
+    pyinstaller_args.extend(collect_data)
     
     PyInstaller.__main__.run(pyinstaller_args)
     

@@ -3,6 +3,9 @@ import cloudscraper
 from bs4 import BeautifulSoup
 from ddgs import DDGS
 import requests
+import feedparser
+from dateutil import parser as date_parser
+from datetime import datetime, timedelta, timezone
 
 logger = logging.getLogger(__name__)
 
@@ -23,87 +26,113 @@ def get_stock_data(symbol, period="6mo"):
         import pandas as pd
         import pandas_ta as ta
         ticker = yf.Ticker(symbol)
-        hist = ticker.history(period=period)
         info = ticker.info
+        hist = ticker.history(period=period)
 
         if len(hist) == 0:
             return {"error": "Δεν βρέθηκαν ιστορικά δεδομένα."}
+
+        quote_type = info.get("quoteType")
 
         cp = hist['Close'].iloc[-1]
         pp = hist['Close'].iloc[-2] if len(hist) >= 2 else cp
         pct_change = ((cp - pp) / pp) * 100 if pp != 0 else 0.0
 
+        # Υπολογισμός τεχνικών δεικτών για όλους τους τύπους
         hist.ta.rsi(length=14, append=True)
         hist.ta.macd(append=True)
         hist.ta.sma(length=20, append=True)
         hist.ta.sma(length=50, append=True)
         hist.ta.ema(length=20, append=True)
         hist.ta.ema(length=50, append=True)
-        
         latest = hist.iloc[-1]
-        mcap = info.get("marketCap", 0)
-        pe = info.get('trailingPE', 'N/A')
-        div = info.get("dividendYield")
-        if div is None:
-            div = info.get("trailingAnnualDividendYield")
-        beta = info.get('beta', 'N/A')
-        website = info.get("website", "")
-        domain = website.replace("https://", "").replace("http://", "").replace("www.", "").split('/')[0] if website else ""
-        
-        rev_growth = info.get("revenueGrowth")
-        roe = info.get("returnOnEquity")
-        dte = info.get("debtToEquity")
-        fcf = info.get("freeCashflow")
-        op_margin = info.get("operatingMargins")
-
-        forward_pe = info.get("forwardPE", "N/A")
-        ev_ebitda = info.get("enterpriseToEbitda", "N/A")
-        pb_ratio = info.get("priceToBook", "N/A")
-        
-        # Υπολογισμός Debt / EBITDA (αν υπάρχουν)
-        total_debt = info.get("totalDebt")
-        ebitda = info.get("ebitda")
-        debt_ebitda = (total_debt / ebitda) if isinstance(total_debt, (int, float)) and isinstance(ebitda, (int, float)) and ebitda != 0 else "N/A"
-
-        fmt_rev_growth = f"{rev_growth * 100:.2f}%" if isinstance(rev_growth, (int, float)) else "N/A"
-        fmt_roe = f"{roe * 100:.2f}%" if isinstance(roe, (int, float)) else "N/A"
-        fmt_op_margin = f"{op_margin * 100:.2f}%" if isinstance(op_margin, (int, float)) else "N/A"
-        fmt_dte = f"{dte:.2f}" if isinstance(dte, (int, float)) else "N/A"
-        
-        fmt_fwd_pe = f"{forward_pe:.2f}" if isinstance(forward_pe, (int, float)) else "N/A"
-        fmt_ev_ebitda = f"{ev_ebitda:.2f}" if isinstance(ev_ebitda, (int, float)) else "N/A"
-        fmt_pb = f"{pb_ratio:.2f}" if isinstance(pb_ratio, (int, float)) else "N/A"
-        fmt_debt_ebitda = f"{debt_ebitda:.2f}" if isinstance(debt_ebitda, (int, float)) else "N/A"
-
-        if isinstance(fcf, (int, float)):
-            fmt_fcf = f"${fcf/1e9:.2f}B" if abs(fcf) >= 1e9 else f"${fcf/1e6:.2f}M"
-        else:
-            fmt_fcf = "N/A"
 
         res = {
-            "price": f"${cp:.2f} ({pct_change:.2f}%)",
-            "mcap": f"${mcap/1e9:.2f}B" if mcap >= 1e9 else f"${mcap/1e6:.2f}M",
-            "pe": f"{pe:.2f}" if isinstance(pe, (int, float)) else "N/A",
-            "div": (f"{div:.2f}%" if div >= 1 else f"{div * 100:.2f}%") if isinstance(div, (int, float)) else "N/A",
-            "beta": f"{beta:.2f}" if isinstance(beta, (int, float)) else "N/A",
+            "price": f"${cp:,.2f} ({pct_change:.2f}%)" if quote_type != 'INDEX' else f"{cp:,.2f} ({pct_change:.2f}%)",
             "rsi": f"{latest.get('RSI_14'):.2f}" if pd.notna(latest.get('RSI_14')) else "N/A",
             "macd": f"{latest.get('MACD_12_26_9'):.2f}" if pd.notna(latest.get('MACD_12_26_9')) else "N/A",
             "sma20": f"{latest.get('SMA_20'):.2f}" if pd.notna(latest.get('SMA_20')) else "N/A",
             "sma50": f"{latest.get('SMA_50'):.2f}" if pd.notna(latest.get('SMA_50')) else "N/A",
-            "rev_growth": fmt_rev_growth,
-            "roe": fmt_roe,
-            "op_margin": fmt_op_margin,
-            "dte": fmt_dte,
-            "fcf": fmt_fcf,
-            "forward_pe": fmt_fwd_pe,
-            "ev_ebitda": fmt_ev_ebitda,
-            "pb_ratio": fmt_pb,
-            "debt_ebitda": fmt_debt_ebitda,
+            "df": hist,
+            "quote_type": quote_type
         }
-        res["domain"] = domain
-        res["website"] = website
-        res["context"] = f"[ΒΑΣΙΚΑ ΔΕΔΟΜΕΝΑ & ΤΕΧΝΙΚΟΙ ΔΕΙΚΤΕΣ]\nΤιμή Κλεισίματος: {cp:.2f} | P/E: {pe}\nRSI(14): {res['rsi']} | MACD: {res['macd']} | SMA20: {res['sma20']} | SMA50: {res['sma50']}\n\n[ΟΙΚΟΝΟΜΙΚΗ ΥΓΕΙΑ & ΑΠΟΔΟΣΗ]\nRevenue Growth: {fmt_rev_growth} | ROE: {fmt_roe} | Operating Margin: {fmt_op_margin}\nDebt to Equity: {fmt_dte} | Free Cash Flow: {fmt_fcf}\n\n[ΑΠΟΤΙΜΗΣΗ & ΕΠΙΠΛΕΟΝ ΔΕΙΚΤΕΣ]\nForward P/E: {fmt_fwd_pe} | EV/EBITDA: {fmt_ev_ebitda} | Price/Book: {fmt_pb} | Debt/EBITDA: {fmt_debt_ebitda}"
-        res["df"] = hist
+        
+        context_parts = [f"[ΒΑΣΙΚΑ ΔΕΔΟΜΕΝΑ & ΤΕΧΝΙΚΟΙ ΔΕΙΚΤΕΣ]\nΤιμή: {res['price']}\nRSI(14): {res['rsi']} | MACD: {res['macd']} | SMA20: {res['sma20']} | SMA50: {res['sma50']}"]
+
+        # Διαφορετική διαχείριση ανάλογα με τον τύπο (Μετοχή, ETF, Δείκτης)
+        if quote_type == 'EQUITY':
+            mcap = info.get("marketCap", 0)
+            pe = info.get('trailingPE', 'N/A')
+            div = info.get("dividendYield") or info.get("trailingAnnualDividendYield")
+            beta = info.get('beta', 'N/A')
+            website = info.get("website", "")
+            domain = website.replace("https://", "").replace("http://", "").replace("www.", "").split('/')[0] if website else ""
+            
+            rev_growth, roe, dte, fcf, op_margin = info.get("revenueGrowth"), info.get("returnOnEquity"), info.get("debtToEquity"), info.get("freeCashflow"), info.get("operatingMargins")
+            forward_pe, ev_ebitda, pb_ratio = info.get("forwardPE", "N/A"), info.get("enterpriseToEbitda", "N/A"), info.get("priceToBook", "N/A")
+            total_debt, ebitda = info.get("totalDebt"), info.get("ebitda")
+            debt_ebitda = (total_debt / ebitda) if isinstance(total_debt, (int, float)) and isinstance(ebitda, (int, float)) and ebitda != 0 else "N/A"
+
+            fmt_rev_growth = f"{rev_growth * 100:.2f}%" if isinstance(rev_growth, (int, float)) else "N/A"
+            fmt_roe = f"{roe * 100:.2f}%" if isinstance(roe, (int, float)) else "N/A"
+            fmt_op_margin = f"{op_margin * 100:.2f}%" if isinstance(op_margin, (int, float)) else "N/A"
+            fmt_dte = f"{dte:.2f}" if isinstance(dte, (int, float)) else "N/A"
+            fmt_fwd_pe = f"{forward_pe:.2f}" if isinstance(forward_pe, (int, float)) else "N/A"
+            fmt_ev_ebitda = f"{ev_ebitda:.2f}" if isinstance(ev_ebitda, (int, float)) else "N/A"
+            fmt_pb = f"{pb_ratio:.2f}" if isinstance(pb_ratio, (int, float)) else "N/A"
+            fmt_debt_ebitda = f"{debt_ebitda:.2f}" if isinstance(debt_ebitda, (int, float)) else "N/A"
+            fmt_fcf = f"${fcf/1e9:.2f}B" if isinstance(fcf, (int, float)) and abs(fcf) >= 1e9 else (f"${fcf/1e6:.2f}M" if isinstance(fcf, (int, float)) else "N/A")
+
+            res.update({
+                "mcap": f"${mcap/1e9:.2f}B" if mcap >= 1e9 else f"${mcap/1e6:.2f}M",
+                "pe": f"{pe:.2f}" if isinstance(pe, (int, float)) else "N/A",
+                "div": (f"{div * 100:.2f}%") if isinstance(div, (int, float)) else "N/A",
+                "beta": f"{beta:.2f}" if isinstance(beta, (int, float)) else "N/A",
+                "rev_growth": fmt_rev_growth, "roe": fmt_roe, "op_margin": fmt_op_margin, "dte": fmt_dte, "fcf": fmt_fcf,
+                "forward_pe": fmt_fwd_pe, "ev_ebitda": fmt_ev_ebitda, "pb_ratio": fmt_pb, "debt_ebitda": fmt_debt_ebitda,
+                "domain": domain, "website": website,
+            })
+            context_parts[0] += f" | P/E: {res['pe']}"
+            context_parts.append(f"[ΟΙΚΟΝΟΜΙΚΗ ΥΓΕΙΑ & ΑΠΟΔΟΣΗ]\nRevenue Growth: {fmt_rev_growth} | ROE: {fmt_roe} | Operating Margin: {fmt_op_margin}\nDebt to Equity: {fmt_dte} | Free Cash Flow: {fmt_fcf}")
+            context_parts.append(f"[ΑΠΟΤΙΜΗΣΗ & ΕΠΙΠΛΕΟΝ ΔΕΙΚΤΕΣ]\nForward P/E: {fmt_fwd_pe} | EV/EBITDA: {fmt_ev_ebitda} | Price/Book: {fmt_pb} | Debt/EBITDA: {fmt_debt_ebitda}")
+
+        elif quote_type == 'ETF':
+            mcap = info.get("totalAssets", 0)
+            pe = info.get('trailingPE', 'N/A')
+            div = info.get("yield", 0) * 100 if info.get("yield") else 'N/A'
+            beta = info.get('beta3Year', 'N/A')
+            domain = info.get("fundFamily", "")
+            
+            res.update({
+                "mcap": f"${mcap/1e9:.2f}B" if mcap >= 1e9 else f"${mcap/1e6:.2f}M",
+                "pe": f"{pe:.2f}" if isinstance(pe, (int, float)) else "N/A",
+                "div": f"{div:.2f}%" if isinstance(div, (int, float)) else "N/A",
+                "beta": f"{beta:.2f}" if isinstance(beta, (int, float)) else "N/A",
+                "domain": domain, "website": "",
+                "rev_growth": "N/A", "roe": "N/A", "op_margin": "N/A", "dte": "N/A", "fcf": "N/A",
+                "forward_pe": "N/A", "ev_ebitda": "N/A", "pb_ratio": "N/A", "debt_ebitda": "N/A",
+            })
+            context_parts[0] += f" | P/E: {res['pe']}"
+            context_parts.append(f"[ΔΕΔΟΜΕΝΑ ETF]\nΜερισμ. Απόδοση: {res['div']} | Beta (3Y): {res['beta']} | Σύνολο Ενεργητικού: {res['mcap']}")
+
+        elif quote_type == 'INDEX':
+            res.update({
+                "mcap": "N/A", "pe": "N/A", "div": "N/A", "beta": "N/A", "domain": "", "website": "",
+                "rev_growth": "N/A", "roe": "N/A", "op_margin": "N/A", "dte": "N/A", "fcf": "N/A",
+                "forward_pe": "N/A", "ev_ebitda": "N/A", "pb_ratio": "N/A", "debt_ebitda": "N/A",
+            })
+            context_parts.append("[ΑΝΑΛΥΣΗ ΔΕΙΚΤΗ]\nΑυτό είναι ένας χρηματιστηριακός δείκτης. Η ανάλυση πρέπει να εστιάσει στην τεχνική του πορεία (βάσει γραφήματος και δεικτών RSI/MACD/SMA) και στις γενικότερες ειδήσεις που τον επηρεάζουν.")
+        
+        # Fallback για περιπτώσεις που το yfinance δεν δίνει quoteType
+        else:
+            res.update({
+                "mcap": "N/A", "pe": "N/A", "div": "N/A", "beta": "N/A", "domain": "", "website": "",
+                "rev_growth": "N/A", "roe": "N/A", "op_margin": "N/A", "dte": "N/A", "fcf": "N/A",
+                "forward_pe": "N/A", "ev_ebitda": "N/A", "pb_ratio": "N/A", "debt_ebitda": "N/A",
+            })
+            context_parts.append("[ΓΕΝΙΚΗ ΑΝΑΛΥΣΗ]\nΔεν ήταν δυνατός ο εντοπισμός του τύπου (Μετοχή/ETF/Δείκτης). Εστίασε στην τεχνική ανάλυση και τις ειδήσεις.")
+
+        res["context"] = "\n\n".join(context_parts)
         return res
     except Exception as e:
         logger.error(f"Σφάλμα λήψης ιστορικών δεδομένων {symbol}: {e}", exc_info=True)
@@ -289,11 +318,23 @@ def get_newsapi_data(query, api_key, extra_query="", language="", from_date=""):
     if not api_key:
         return {"error": "Missing API Key"}
     try:
-        q = query
+        # Το βασικό query (όνομα μετοχής) πρέπει πάντα να υπάρχει. Το βάζουμε σε uquotes για να είναι phrase.
+        q_parts = [f'"{query}"']
+
         if extra_query:
-            q = f"{query} AND {extra_query}"
+            # Δημιουργία του σύνθετου query από την είσοδο του χρήστη
+            or_groups = []
+            for group in extra_query.split(','):
+                group = group.strip()
+                if not group: continue
+                and_terms = [f'"{t.strip()}"' for t in group.split('+') if t.strip()]
+                if and_terms:
+                    or_groups.append(f"({' AND '.join(and_terms)})")
+            if or_groups:
+                q_parts.append(f"({' OR '.join(or_groups)})")
             
-        url = f"https://newsapi.org/v2/everything?q={q}&apiKey={api_key}&pageSize=10&sortBy=relevancy"
+        final_q = " AND ".join(q_parts)
+        url = f"https://newsapi.org/v2/everything?q={final_q}&apiKey={api_key}&pageSize=10&sortBy=relevancy"
         if language:
             url += f"&language={language}"
         if from_date:
@@ -336,3 +377,62 @@ def scrape_url_text(url):
     except Exception as e:
         logger.error(f"Σφάλμα ανάγνωσης από το URL {url}: {e}")
         return ""
+
+def validate_rss(url):
+    """Ελέγχει αν ένα URL είναι έγκυρο RSS Feed."""
+    try:
+        feed = feedparser.parse(url)
+        return feed.bozo == 0 and len(feed.entries) > 0
+    except:
+        return False
+
+def get_rss_news(feed_urls, keyword="", days_limit=None):
+    """Αντλεί ειδήσεις από λίστα RSS feeds και εφαρμόζει φίλτρα."""
+    articles = []
+    now = datetime.now(timezone.utc)
+    
+    for url in feed_urls:
+        try:
+            feed = feedparser.parse(url)
+            for entry in feed.entries:
+                title = entry.get("title", "")
+                link = entry.get("link", "")
+                summary = entry.get("summary", "")
+                
+                # Έλεγχος Λέξης-Κλειδιού
+                if keyword:
+                    text_to_search = (title + " " + summary).lower()
+                    or_groups = [g.strip() for g in keyword.split(',')]
+                    match_found = False
+                    for group in or_groups:
+                        and_terms = [t.strip().lower() for t in group.split('+')]
+                        if all(term in text_to_search for term in and_terms):
+                            match_found = True
+                            break
+                    if not match_found:
+                        continue
+                    
+                # Έλεγχος Ημερομηνίας
+                pub_date_str = entry.get("published", entry.get("updated", ""))
+                if days_limit and pub_date_str:
+                    try:
+                        pub_date = date_parser.parse(pub_date_str)
+                        if pub_date.tzinfo is None:
+                            pub_date = pub_date.replace(tzinfo=timezone.utc)
+                        if (now - pub_date).days > int(days_limit):
+                            continue
+                    except:
+                        pass # Αν δεν μπορεί να διαβάσει την ημερομηνία, το κρατάμε
+                        
+                articles.append({
+                    "title": title,
+                    "url": link,
+                    "source": feed.feed.get("title", "RSS Feed"),
+                    "date": pub_date_str[:16] if pub_date_str else "",
+                    "description": BeautifulSoup(summary, "html.parser").get_text()[:200] + "..." if summary else ""
+                })
+        except Exception as e:
+            logger.error(f"Σφάλμα ανάγνωσης RSS {url}: {e}")
+            
+    # Ταξινόμηση ανά ημερομηνία (πρόχειρη)
+    return articles

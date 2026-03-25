@@ -35,15 +35,18 @@ SmartScreen, πατήστε "Περισσότερες πληροφορίες" κ
    επικολλήστε τα API Keys σας και πατήστε "Αποθήκευση Κλειδιών".
 
 2. ΛΙΣΤΑ ΜΕΤΟΧΩΝ (WATCHLIST): Στην ενότητα "Διαχείριση Μετοχής"
-   συμπληρώστε τα στοιχεία (π.χ. Όνομα: Apple, Yahoo Symbol: AAPL)
-   και πατήστε "Αποθήκευση Μετοχής". Η μετοχή θα προστεθεί στη λίστα.
+   συμπληρώστε τα στοιχεία (υποστηρίζονται Μετοχές, ETFs και Δείκτες,
+   π.χ. Όνομα: Apple, Yahoo Symbol: AAPL), γράψτε τυχόν σημειώσεις
+   και πατήστε "Αποθήκευση Μετοχής". Θα προστεθεί στη λίστα.
 
 3. ΕΠΙΛΟΓΗ & ΔΕΔΟΜΕΝΑ: Από το κεντρικό παράθυρο, επιλέξτε
    τη μετοχή σας από το αναπτυσσόμενο μενού. Ενεργοποιήστε τα 
    κουτάκια (checkboxes) για τις πηγές που θέλετε να διαβάσει 
-   το AI (π.χ. Ειδήσεις NewsAPI, Εταιρικό Site, custom URLs)
-   ή προσθέστε δικά σας τοπικά αρχεία (PDF/TXT) και επικολλήστε 
-   συγκεκριμένα άρθρα στα αντίστοιχα πεδία.
+   το AI (π.χ. Ειδήσεις NewsAPI, Εταιρικό Site, custom URLs
+   ή RSS Feeds). Στις λέξεις κλειδιά (NewsAPI / RSS) μπορείτε
+   να χρησιμοποιήσετε κόμμα (,) για "OR" ή συν (+) για "AND".
+   Προσθέστε επίσης δικά σας τοπικά αρχεία (PDF/TXT) ή
+   επικολλήστε συγκεκριμένα άρθρα στα αντίστοιχα πεδία.
 
 4. ΑΝΑΛΥΣΗ: Επιλέξτε "Συνοπτικά" ή "Αναλυτικά" και πατήστε
    "Έναρξη Ανάλυσης". Μόλις το AI ολοκληρώσει, η αναφορά 
@@ -88,10 +91,13 @@ click "More info" and then "Run anyway").
 1. ADD API KEYS: In the left menu, paste your API Keys 
    and click "Save Keys".
 2. STOCK LIST (WATCHLIST): In the "Stock Management" section, 
-   fill in the details (e.g., Name: Apple, Yahoo Symbol: AAPL) 
+   fill in the details (Supports Stocks, ETFs, and Indexes, 
+   e.g., Name: Apple, Yahoo Symbol: AAPL), add any optional notes,
    and click "Save Stock".
 3. SELECTION & DATA: From the main window, select your stock, 
-   check the data sources, or attach your own files (PDF/TXT).
+   check the data sources (e.g. RSS Feeds, NewsAPI), or attach 
+   your own files (PDF/TXT). In the keyword filters (NewsAPI / RSS) 
+   you can use comma (,) for "OR", or plus (+) for "AND" operators.
 4. ANALYSIS: Choose "Summary" or "Detailed" and click 
    "Start Analysis". Export to Word (.docx) when done!
 5. AUTO-UPDATES: Upon startup, the app checks for new versions.

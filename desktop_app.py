@@ -94,14 +94,14 @@ class App(ctk.CTk):
             self.iconbitmap(resource_path("icon.ico"))
             # Ενημέρωση των Windows για εμφάνιση του σωστού εικονιδίου στη γραμμή εργασιών (Taskbar)
             import ctypes
-            myappid = 'aistockanalyzer.pro.desktop.1.2'
+            myappid = 'aistockanalyzer.pro.desktop.1.3'
             ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(myappid)
         except Exception:
             pass
             
         self.grid_columnconfigure(1, weight=1)
         self.grid_rowconfigure(0, weight=1)
-        self.grid_columnconfigure(0, minsize=380)
+        self.grid_columnconfigure(0, minsize=390)
 
         # --- ΠΛΕΥΡΙΚΗ ΜΠΑΡΑ ---
         self.sidebar_frame = ctk.CTkScrollableFrame(self, width=380, corner_radius=0)
@@ -208,25 +208,32 @@ class App(ctk.CTk):
         self.stock_inv_entry = ctk.CTkEntry(f_stk4, placeholder_text="Investing.com Symbol")
         self.stock_inv_entry.pack(side="left", fill="x", expand=True)
         ctk.CTkButton(f_stk4, text="📋", width=25, fg_color="#444", hover_color="#555", command=lambda: self.paste_to_entry(self.stock_inv_entry)).pack(side="right", padx=(5, 0))
-        
+
+        f_stk5 = ctk.CTkFrame(self.sidebar_frame, fg_color="transparent")
+        f_stk5.grid(row=19, column=0, padx=20, pady=2, sticky="ew")
+        ctk.CTkLabel(f_stk5, text=self.tr("stock_notes"), font=ctk.CTkFont(size=11), text_color="gray").pack(anchor="w")
+        self.stock_notes_entry = ctk.CTkTextbox(f_stk5, height=60)
+        self.stock_notes_entry.pack(fill="x", expand=True)
+
         self.save_stock_btn = ctk.CTkButton(self.sidebar_frame, text=self.tr("save_stock"), command=self.save_stock, fg_color="#2b2b2b", hover_color="#3b3b3b")
-        self.save_stock_btn.grid(row=19, column=0, padx=20, pady=(5, 10), sticky="ew")
+        self.save_stock_btn.grid(row=20, column=0, padx=20, pady=(5, 10), sticky="ew")
 
-        ctk.CTkLabel(self.sidebar_frame, text=self.tr("watchlist"), font=ctk.CTkFont(size=14, weight="bold")).grid(row=20, column=0, padx=20, pady=(10, 5), sticky="w")
+        ctk.CTkLabel(self.sidebar_frame, text=self.tr("watchlist"), font=ctk.CTkFont(size=14, weight="bold")).grid(row=21, column=0, padx=20, pady=(10, 5), sticky="w")
 
-        self.watchlist_frame = ctk.CTkScrollableFrame(self.sidebar_frame, height=320)
-        self.watchlist_frame.grid(row=21, column=0, padx=10, pady=(0, 10), sticky="nsew")
-        
+        self.watchlist_frame = ctk.CTkScrollableFrame(self.sidebar_frame, height=280)
+        self.watchlist_frame.grid(row=22, column=0, padx=10, pady=(0, 10), sticky="nsew")
+        self.sidebar_frame.grid_rowconfigure(22, weight=1)
+
         self.clear_cache_btn = ctk.CTkButton(self.sidebar_frame, text=self.tr("clear_cache"), fg_color="transparent", border_width=1, text_color="gray", command=self.clear_cache)
-        self.clear_cache_btn.grid(row=22, column=0, padx=20, pady=10, sticky="ew")
+        self.clear_cache_btn.grid(row=23, column=0, padx=20, pady=10, sticky="ew")
         ToolTip(self.clear_cache_btn, self.tr("tt_clear_cache"))
 
         self.clear_all_data_btn = ctk.CTkButton(self.sidebar_frame, text=self.tr("clear_all"), fg_color="transparent", border_width=1, text_color="#d9534f", hover_color="#3b1a1a", command=self.clear_all_data)
-        self.clear_all_data_btn.grid(row=23, column=0, padx=20, pady=(0, 10), sticky="ew")
+        self.clear_all_data_btn.grid(row=24, column=0, padx=20, pady=(0, 10), sticky="ew")
         ToolTip(self.clear_all_data_btn, self.tr("tt_clear_all"))
 
         self.status_label = ctk.CTkLabel(self.sidebar_frame, text="", text_color="green")
-        self.status_label.grid(row=24, column=0, pady=(0, 10))
+        self.status_label.grid(row=25, column=0, pady=(0, 10))
 
         self.update_watchlist_table()
 
@@ -306,7 +313,7 @@ class App(ctk.CTk):
                 if resp.status_code == 200:
                     data = resp.json()
                     latest_version = data.get("tag_name", "").replace("v", "")
-                    current_version = "1.2"
+                    current_version = "1.3"
                     
                     # Απλή σύγκριση εκδόσεων (π.χ. "1.3" > "1.2")
                     if latest_version and latest_version != current_version:
@@ -351,7 +358,7 @@ class App(ctk.CTk):
             self.grid_columnconfigure(0, minsize=0)
         else:
             self.sidebar_frame.grid()
-            self.grid_columnconfigure(0, minsize=380)
+            self.grid_columnconfigure(0, minsize=390)
 
     def paste_to_entry(self, entry_widget):
         try:
@@ -385,22 +392,37 @@ class App(ctk.CTk):
         self.stock_menu = ctk.CTkOptionMenu(stock_ctrl_frame, variable=self.stock_var, values=[self.tr("choose_stock_default")], command=self.on_stock_select)
         self.stock_menu.pack(side="left", fill="x", expand=True)
         
-        ctk.CTkLabel(pane, text=self.tr("saved_urls"), font=ctk.CTkFont(size=14, weight="bold")).pack(anchor="w", padx=15, pady=(10, 5))
+        ctk.CTkLabel(pane, text=self.tr("saved_urls_rss"), font=ctk.CTkFont(size=14, weight="bold")).pack(anchor="w", padx=15, pady=(10, 5))
         self.urls_frame = ctk.CTkScrollableFrame(pane, height=150)
         self.urls_frame.pack(fill="x", padx=15, pady=5)
         
         self.url_rows = []
         for url_item in self.user_data.get("urls", []):
-            self.add_url_row(url_item.get("title", ""), url_item.get("url", ""))
+            self.add_url_row(url_item.get("title", ""), url_item.get("url", ""), url_item.get("type", "URL"))
             
         url_btns_frame = ctk.CTkFrame(pane, fg_color="transparent")
         url_btns_frame.pack(anchor="w", padx=15, pady=2)
         
-        self.add_url_btn = ctk.CTkButton(url_btns_frame, text=self.tr("add_url"), width=120, command=lambda: self.add_url_row("", ""))
+        self.add_url_btn = ctk.CTkButton(url_btns_frame, text=self.tr("add_url"), width=120, command=lambda: self.add_url_row("", "", "URL"))
         self.add_url_btn.pack(side="left", padx=(0, 5))
         
         self.save_urls_btn = ctk.CTkButton(url_btns_frame, text=self.tr("save_urls"), width=140, fg_color="#2b2b2b", hover_color="#3b3b3b", command=self.save_urls)
         self.save_urls_btn.pack(side="left")
+            
+        self.rss_filters_frame = ctk.CTkFrame(pane, fg_color="transparent")
+        self.rss_filters_frame.pack(fill="x", padx=15, pady=(5, 10))
+        
+        ctk.CTkLabel(self.rss_filters_frame, text=self.tr("rss_filters"), font=ctk.CTkFont(size=11, weight="bold")).pack(side="left", padx=(0, 5))
+        
+        self.rss_keyword_entry = ctk.CTkEntry(self.rss_filters_frame, placeholder_text=self.tr("rss_keyword_ph"), width=180, height=24, font=ctk.CTkFont(size=11))
+        self.rss_keyword_entry.pack(side="left", padx=(0, 5))
+        ToolTip(self.rss_keyword_entry, self.tr("tt_rss_keyword"))
+        self.rss_time_var = ctk.StringVar(value="Όλα")
+        self.rss_time_menu = ctk.CTkOptionMenu(self.rss_filters_frame, variable=self.rss_time_var, values=["Όλα", "24 Ώρες", "3 Ημέρες", "7 Ημέρες"], width=90, height=24)
+        self.rss_time_menu.pack(side="left")
+        
+        self.rss_apply_btn = ctk.CTkButton(self.rss_filters_frame, text=self.tr("rss_apply"), width=60, height=24, fg_color="#1f77b4", hover_color="#145c8f", command=self.apply_rss_filters)
+        self.rss_apply_btn.pack(side="left", padx=(5, 0))
             
         usage = self.user_data.get("api_usage", {})
         av_rem = max(0, 25 - usage.get("av", 0))
@@ -510,7 +532,7 @@ class App(ctk.CTk):
             self.files_list_label.configure(text=", ".join(names))
             self.clear_files_btn.pack(side="left", padx=(5, 0))
 
-    def add_url_row(self, title, url):
+    def add_url_row(self, title, url, typ="URL"):
         f = ctk.CTkFrame(self.urls_frame, fg_color="transparent")
         f.pack(fill="x", pady=2)
         chk_var = ctk.IntVar(value=0)
@@ -526,6 +548,23 @@ class App(ctk.CTk):
         def delete_row():
             if row_dict in self.url_rows: self.url_rows.remove(row_dict)
             f.destroy()
+            self.save_urls(silent=True, skip_validation=True)
+            
+        def move_up():
+            if row_dict in self.url_rows:
+                idx = self.url_rows.index(row_dict)
+                if idx > 0:
+                    self.url_rows[idx - 1], self.url_rows[idx] = self.url_rows[idx], self.url_rows[idx - 1]
+                    self._repack_url_rows()
+                    self.save_urls(silent=True, skip_validation=True)
+
+        def move_down():
+            if row_dict in self.url_rows:
+                idx = self.url_rows.index(row_dict)
+                if idx < len(self.url_rows) - 1:
+                    self.url_rows[idx + 1], self.url_rows[idx] = self.url_rows[idx], self.url_rows[idx + 1]
+                    self._repack_url_rows()
+                    self.save_urls(silent=True, skip_validation=True)
             
         del_btn = ctk.CTkButton(f, text="❌", width=25, fg_color="#d9534f", hover_color="#c9302c", command=delete_row)
         del_btn.pack(side="right", padx=(5, 0))
@@ -533,24 +572,46 @@ class App(ctk.CTk):
         paste_btn = ctk.CTkButton(f, text="📋", width=25, fg_color="#444", hover_color="#555", command=lambda: self.paste_to_entry(u_entry))
         paste_btn.pack(side="right", padx=(5, 0))
         ToolTip(paste_btn, self.tr("tt_paste_url"))
+
+        down_btn = ctk.CTkButton(f, text="▼", width=20, fg_color="#444", hover_color="#555", command=move_down)
+        down_btn.pack(side="right", padx=(2, 0))
+
+        up_btn = ctk.CTkButton(f, text="▲", width=20, fg_color="#444", hover_color="#555", command=move_up)
+        up_btn.pack(side="right", padx=(5, 0))
         
+        type_var = ctk.StringVar(value=typ)
+        type_menu = ctk.CTkOptionMenu(f, variable=type_var, values=["URL", "RSS"], width=60, command=lambda v: u_entry.configure(text_color="#ff9933" if v=="RSS" else "white"))
+        type_menu.pack(side="left", padx=(0, 5))
+        if typ == "RSS":
+            u_entry.configure(text_color="#ff9933")
+            
         u_entry.pack(side="left", fill="x", expand=True)
         if url: u_entry.insert(0, url)
         ToolTip(u_entry, lambda: u_entry.get())
         
-        row_dict.update({"frame": f, "chk": chk_var, "title": t_entry, "url": u_entry})
+        row_dict.update({"frame": f, "chk": chk_var, "type": type_var, "title": t_entry, "url": u_entry})
         self.url_rows.append(row_dict)
 
-    def save_urls(self):
+    def _repack_url_rows(self):
+        for row in self.url_rows:
+            row["frame"].pack_forget()
+        for row in self.url_rows:
+            row["frame"].pack(fill="x", pady=2)
+
+    def save_urls(self, silent=False, skip_validation=False):
         urls = []
         for row in self.url_rows:
             t = row["title"].get().strip()
             u = row["url"].get().strip()
+            typ = row["type"].get()
             if u:
-                urls.append({"title": t, "url": u})
+                if not skip_validation and typ == "RSS" and not stock_fetcher.validate_rss(u):
+                    messagebox.showwarning(self.tr("rss_error_title"), self.tr("rss_error_invalid").replace("{u}", u))
+                urls.append({"title": t, "url": u, "type": typ})
         self.user_data["urls"] = urls
         save_data(self.user_data)
-        self.status_main.configure(text="✅ Τα URLs αποθηκεύτηκαν!", text_color="green")
+        if not silent:
+            self.status_main.configure(text="✅ Τα URLs αποθηκεύτηκαν!", text_color="green")
 
     def _build_overview_pane(self, row, col):
         pane = ctk.CTkFrame(self.right_scroll_frame, fg_color="transparent")
@@ -591,11 +652,13 @@ class App(ctk.CTk):
         self.tab_news_name = self.tr("tab_news")
         self.tab_newsapi_name = self.tr("tab_newsapi")
         self.tab_pages_name = self.tr("tab_pages")
+        self.tab_rss_name = self.tr("tab_rss")
         
         self.overview_tabs.add(self.tab_chart_name)
         self.overview_tabs.add(self.tab_news_name)
         self.overview_tabs.add(self.tab_newsapi_name)
         self.overview_tabs.add(self.tab_pages_name)
+        self.overview_tabs.add(self.tab_rss_name)
         
         self.chart_tab = self.overview_tabs.tab(self.tab_chart_name)
         
@@ -626,14 +689,24 @@ class App(ctk.CTk):
         self.pages_frame.pack(fill="both", expand=True, padx=20, pady=20)
         ctk.CTkLabel(self.pages_frame, text="Επιλέξτε μια μετοχή για να δείτε τους συνδέσμους.", text_color="gray").pack(pady=20)
         
+        self.rss_frame = ctk.CTkScrollableFrame(self.overview_tabs.tab(self.tab_rss_name))
+        self.rss_frame.pack(fill="both", expand=True, padx=5, pady=5)
+        ctk.CTkLabel(self.rss_frame, text=self.tr("rss_empty_msg"), text_color="gray").pack(pady=20)
+        
         ctk.CTkLabel(pane, text=self.tr("stats_title"), font=ctk.CTkFont(size=13, weight="bold")).pack(anchor="w", pady=(10, 2))
-        stats_frame = ctk.CTkFrame(pane, fg_color="transparent")
-        stats_frame.pack(fill="x", pady=2)
-        stats_frame.grid_columnconfigure((0,1,2,3), weight=1)
-        self.l_mcap = self.create_metric(stats_frame, "Market Cap", "---", 0, 0, self.tr("tt_mcap"))
-        self.l_pe = self.create_metric(stats_frame, "P/E Ratio", "---", 0, 1, self.tr("tt_pe"))
-        self.l_div = self.create_metric(stats_frame, "Div Yield", "---", 0, 2, self.tr("tt_div"))
-        self.l_beta = self.create_metric(stats_frame, "Beta", "---", 0, 3, self.tr("tt_beta"))
+        self.stats_frame = ctk.CTkFrame(pane, fg_color="transparent")
+        self.stats_frame.pack(fill="x", pady=2)
+        self.stats_frame.grid_columnconfigure((0,1,2,3), weight=1)
+        self.l_mcap = self.create_metric(self.stats_frame, "Market Cap", "---", 0, 0, self.tr("tt_mcap"))
+        self.l_pe = self.create_metric(self.stats_frame, "P/E Ratio", "---", 0, 1, self.tr("tt_pe"))
+        self.l_div = self.create_metric(self.stats_frame, "Div Yield", "---", 0, 2, self.tr("tt_div"))
+        self.l_beta = self.create_metric(self.stats_frame, "Beta", "---", 0, 3, self.tr("tt_beta"))
+
+        self.notes_frame = ctk.CTkFrame(pane, fg_color="#242424", corner_radius=5)
+        ctk.CTkLabel(self.notes_frame, text=self.tr("stock_notes"), font=ctk.CTkFont(size=13, weight="bold")).pack(anchor="w", padx=10, pady=(5,2))
+        self.notes_display_box = ctk.CTkTextbox(self.notes_frame, wrap="word", font=ctk.CTkFont(size=12), fg_color="transparent", height=60)
+        self.notes_display_box.pack(fill="x", expand=True, padx=10, pady=(0,5))
+        self.notes_display_box.configure(state="disabled")
         
         ctk.CTkLabel(pane, text=self.tr("health_title"), font=ctk.CTkFont(size=13, weight="bold")).pack(anchor="w", pady=(10, 2))
         health_frame = ctk.CTkFrame(pane, fg_color="transparent")
@@ -654,24 +727,23 @@ class App(ctk.CTk):
         self.l_sma20 = self.create_metric(tech_frame, "SMA 20", "---", 0, 2, self.tr("tt_sma20"))
         self.l_sma50 = self.create_metric(tech_frame, "SMA 50", "---", 0, 3, self.tr("tt_sma50"))
 
-        ctk.CTkLabel(pane, text=self.tr("av_title"), font=ctk.CTkFont(size=13, weight="bold")).pack(anchor="w", pady=(10, 2))
-        av_frame = ctk.CTkFrame(pane, fg_color="transparent")
-        av_frame.pack(fill="x", pady=2)
-        av_frame.grid_columnconfigure((0,1,2), weight=1)
-        self.l_av_pe = self.create_metric(av_frame, "PE Ratio (AV)", "---", 0, 0, self.tr("tt_av_pe"))
-        self.l_av_div = self.create_metric(av_frame, "Div Yield (AV)", "---", 0, 1, self.tr("tt_av_div"))
-        self.l_av_eps = self.create_metric(av_frame, "EPS (AV)", "---", 0, 2, self.tr("tt_av_eps"))
+        self.av_title_label = ctk.CTkLabel(pane, text=self.tr("av_title"), font=ctk.CTkFont(size=13, weight="bold"))
+        self.av_frame = ctk.CTkFrame(pane, fg_color="transparent")
+        self.av_frame.grid_columnconfigure((0,1,2), weight=1)
+        self.l_av_pe = self.create_metric(self.av_frame, "PE Ratio (AV)", "---", 0, 0, self.tr("tt_av_pe"))
+        self.l_av_div = self.create_metric(self.av_frame, "Div Yield (AV)", "---", 0, 1, self.tr("tt_av_div"))
+        self.l_av_eps = self.create_metric(self.av_frame, "EPS (AV)", "---", 0, 2, self.tr("tt_av_eps"))
 
-        ctk.CTkLabel(pane, text=self.tr("fh_title"), font=ctk.CTkFont(size=13, weight="bold")).pack(anchor="w", pady=(10, 2))
-        fh_frame = ctk.CTkFrame(pane, fg_color="transparent")
-        fh_frame.pack(fill="x", pady=2)
-        fh_frame.grid_columnconfigure((0,1,2,3), weight=1)
-        self.l_fh_cur = self.create_metric(fh_frame, self.tr("fh_lbl_cur"), "---", 0, 0, self.tr("tt_fh_cur"))
-        self.l_fh_open = self.create_metric(fh_frame, self.tr("fh_lbl_open"), "---", 0, 1, self.tr("tt_fh_open"))
-        self.l_fh_high = self.create_metric(fh_frame, self.tr("fh_lbl_high"), "---", 0, 2, self.tr("tt_fh_high"))
-        self.l_fh_low = self.create_metric(fh_frame, self.tr("fh_lbl_low"), "---", 0, 3, self.tr("tt_fh_low"))
+        self.fh_title_label = ctk.CTkLabel(pane, text=self.tr("fh_title"), font=ctk.CTkFont(size=13, weight="bold"))
+        self.fh_frame = ctk.CTkFrame(pane, fg_color="transparent")
+        self.fh_frame.grid_columnconfigure((0,1,2,3), weight=1)
+        self.l_fh_cur = self.create_metric(self.fh_frame, self.tr("fh_lbl_cur"), "---", 0, 0, self.tr("tt_fh_cur"))
+        self.l_fh_open = self.create_metric(self.fh_frame, self.tr("fh_lbl_open"), "---", 0, 1, self.tr("tt_fh_open"))
+        self.l_fh_high = self.create_metric(self.fh_frame, self.tr("fh_lbl_high"), "---", 0, 2, self.tr("tt_fh_high"))
+        self.l_fh_low = self.create_metric(self.fh_frame, self.tr("fh_lbl_low"), "---", 0, 3, self.tr("tt_fh_low"))
 
-        ctk.CTkLabel(pane, text=self.tr("ai_analysis_title"), font=ctk.CTkFont(size=13, weight="bold")).pack(anchor="w", pady=(15, 2))
+        self.ai_analysis_title_label = ctk.CTkLabel(pane, text=self.tr("ai_analysis_title"), font=ctk.CTkFont(size=13, weight="bold"))
+        self.ai_analysis_title_label.pack(anchor="w", pady=(15, 2))
         self.result_textbox = ctk.CTkTextbox(pane, wrap="word", font=ctk.CTkFont(size=14), height=300)
         self.result_textbox.pack(fill="x", expand=False, pady=5)
         
@@ -746,10 +818,53 @@ class App(ctk.CTk):
             ToolTip(value_label, tooltip_text)
         return value_label
 
+    def _create_highlighted_textbox(self, parent_frame, scrollable_frame, text, terms, font, text_color, width, is_title=False, url=""):
+        chars_per_line = 60 if is_title else 75
+        line_height = 22 if is_title else 18
+        lines = (len(text) // chars_per_line) + 1 + text.count('\n')
+        h = (lines + 1) * line_height
+        
+        box = ctk.CTkTextbox(parent_frame, wrap="word", font=font, text_color=text_color, fg_color="transparent", width=width, height=h)
+        box.insert("1.0", text)
+        
+        box._textbox.tag_config("hl", background="#e6c300", foreground="black")
+        if terms:
+            for term in terms:
+                start_idx = "1.0"
+                while True:
+                    pos = box._textbox.search(term, start_idx, stopindex="end", nocase=True)
+                    if not pos:
+                        break
+                    end_idx = f"{pos}+{len(term)}c"
+                    box._textbox.tag_add("hl", pos, end_idx)
+                    start_idx = end_idx
+                    
+        box.configure(state="disabled")
+        
+        if url:
+            box._textbox.bind("<Button-1>", lambda e, u=url: webbrowser.open(u))
+            box._textbox.configure(cursor="hand2")
+            
+        def pass_wheel(event):
+            if sys.platform == "darwin":
+                scrollable_frame._parent_canvas.yview_scroll(int(-1 * event.delta), "units")
+            else:
+                scrollable_frame._parent_canvas.yview_scroll(int(-1 * (event.delta / 120)), "units")
+                
+        box._textbox.bind("<MouseWheel>", pass_wheel)
+        box._textbox.bind("<Button-4>", lambda e: scrollable_frame._parent_canvas.yview_scroll(-1, "units"))
+        box._textbox.bind("<Button-5>", lambda e: scrollable_frame._parent_canvas.yview_scroll(1, "units"))
+        
+        return box
+
     def on_av_toggle(self):
         if self.av_var.get() == 1:
+            self.av_title_label.pack(anchor="w", pady=(10, 2), before=self.ai_analysis_title_label)
+            self.av_frame.pack(fill="x", pady=2, before=self.ai_analysis_title_label)
             self._trigger_av_fetch()
         else:
+            self.av_title_label.pack_forget()
+            self.av_frame.pack_forget()
             self.l_av_pe.configure(text="---")
             self.l_av_div.configure(text="---")
             self.l_av_eps.configure(text="---")
@@ -757,8 +872,12 @@ class App(ctk.CTk):
 
     def on_fh_toggle(self):
         if self.fh_var.get() == 1:
+            self.fh_title_label.pack(anchor="w", pady=(10, 2), before=self.ai_analysis_title_label)
+            self.fh_frame.pack(fill="x", pady=2, before=self.ai_analysis_title_label)
             self._trigger_fh_fetch()
         else:
+            self.fh_title_label.pack_forget()
+            self.fh_frame.pack_forget()
             self.l_fh_cur.configure(text="---")
             self.l_fh_open.configure(text="---")
             self.l_fh_high.configure(text="---")
@@ -853,6 +972,82 @@ class App(ctk.CTk):
             self.current_fh_context = ""
             self.fh_var.set(0)
 
+    def apply_rss_filters(self):
+        rss_urls = []
+        if hasattr(self, 'url_rows'):
+            for row in self.url_rows:
+                if row["chk"].get() == 1 and row["type"].get() == "RSS":
+                    u_val = row["url"].get().strip()
+                    if u_val: rss_urls.append(u_val)
+                    
+        if not rss_urls:
+            for widget in self.rss_frame.winfo_children():
+                widget.destroy()
+            ctk.CTkLabel(self.rss_frame, text=self.tr("rss_empty_msg"), text_color="gray").pack(pady=20)
+            self.rss_checkboxes = []
+            return
+
+        for widget in self.rss_frame.winfo_children():
+            widget.destroy()
+        ctk.CTkLabel(self.rss_frame, text=self.tr("rss_fetching"), text_color="orange").pack(pady=20)
+
+        kw = self.rss_keyword_entry.get().strip()
+        t_val = self.rss_time_var.get()
+        threading.Thread(target=self._fetch_rss_thread, args=(rss_urls, kw, t_val), daemon=True).start()
+
+    def _fetch_rss_thread(self, rss_urls, kw, t_val):
+        days_map = {"24 Ώρες": 1, "3 Ημέρες": 3, "7 Ημέρες": 7}
+        rss_data = stock_fetcher.get_rss_news(rss_urls, keyword=kw, days_limit=days_map.get(t_val))
+        self.after(0, self._update_rss_ui, rss_data)
+
+    def _update_rss_ui(self, rss_data):
+        for widget in self.rss_frame.winfo_children():
+            widget.destroy()
+        self.rss_checkboxes = []
+        
+        kw = self.rss_keyword_entry.get().strip()
+        search_terms = []
+        if kw:
+            for group in kw.split(','):
+                for term in group.split('+'):
+                    t = term.strip()
+                    if t and t not in search_terms:
+                        search_terms.append(t)
+        # Ταξινομούμε κατά μήκος ώστε να επισημαίνονται πρώτα οι μεγαλύτερες φράσεις
+        search_terms.sort(key=len, reverse=True)
+
+        if not rss_data:
+            msg = self.tr("rss_no_news") if hasattr(self, 'url_rows') and any(r["chk"].get() == 1 and r["type"].get() == "RSS" for r in self.url_rows) else self.tr("rss_empty_msg")
+            ctk.CTkLabel(self.rss_frame, text=msg, text_color="gray").pack(pady=20)
+        else:
+            for article in rss_data:
+                f = ctk.CTkFrame(self.rss_frame, fg_color="transparent")
+                f.pack(fill="x", pady=2, padx=2)
+                
+                chk_var = ctk.IntVar(value=0)
+                cb = ctk.CTkCheckBox(f, text="", variable=chk_var, width=20)
+                cb.pack(side="left", anchor="n", pady=(2, 0), padx=(0, 5))
+                self.rss_checkboxes.append((chk_var, article))
+                
+                text_f = ctk.CTkFrame(f, fg_color="transparent")
+                text_f.pack(side="left", fill="x", expand=True)
+                
+                title = article.get("title", "Χωρίς Τίτλο")
+                desc = article.get("description", "")
+                        
+                url = article.get("url", "")
+                source = article.get("source", "")
+                date = article.get("date", "")
+                
+                title_box = self._create_highlighted_textbox(text_f, self.rss_frame, f"📰 {title}", search_terms, ctk.CTkFont(weight="bold", size=12), "#ff9933", 550, True, url)
+                title_box.pack(anchor="w", pady=(0, 2))
+                    
+                ctk.CTkLabel(text_f, text=f"Πηγή: {source} | Ημ/νία: {date}", font=ctk.CTkFont(size=10), text_color="gray", anchor="w").pack(anchor="w")
+                
+                if desc:
+                    desc_box = self._create_highlighted_textbox(text_f, self.rss_frame, desc, search_terms, ctk.CTkFont(size=11), "white", 550, False, "")
+                    desc_box.pack(anchor="w", pady=(0, 4))
+
     def on_newsapi_toggle(self):
         if self.newsapi_var.get() == 1:
             self._trigger_newsapi_fetch()
@@ -901,6 +1096,16 @@ class App(ctk.CTk):
             self.newsapi_var.set(0)
             return
             
+        kw = self.newsapi_q_entry.get().strip()
+        search_terms = []
+        if kw:
+            for group in kw.split(','):
+                for term in group.split('+'):
+                    t = term.strip()
+                    if t and t not in search_terms:
+                        search_terms.append(t)
+        search_terms.sort(key=len, reverse=True)
+            
         self.user_data["api_usage"]["newsapi"] = self.user_data.get("api_usage", {}).get("newsapi", 0) + 1
         save_data(self.user_data)
         self._sync_api_usage()
@@ -923,20 +1128,19 @@ class App(ctk.CTk):
             text_f.pack(side="left", fill="x", expand=True)
             
             title = article.get("title", "Χωρίς Τίτλο")
+            desc = article.get("description", "")
             url = article.get("url", "")
             source = article.get("source", "")
             date = article.get("date", "")
             
-            title_lbl = ctk.CTkLabel(text_f, text=f"📰 {title}", font=ctk.CTkFont(weight="bold", size=12), text_color="#1f77b4", cursor="hand2", anchor="w", justify="left", wraplength=550)
-            title_lbl.pack(anchor="w")
-            if url:
-                title_lbl.bind("<Button-1>", lambda e, u=url: webbrowser.open(u))
+            title_box = self._create_highlighted_textbox(text_f, self.newsapi_frame, f"📰 {title}", search_terms, ctk.CTkFont(weight="bold", size=12), "#1f77b4", 550, True, url)
+            title_box.pack(anchor="w", pady=(0, 2))
                 
             ctk.CTkLabel(text_f, text=f"Πηγή: {source} | Ημ/νία: {date}", font=ctk.CTkFont(size=10), text_color="gray", anchor="w").pack(anchor="w")
             
-            desc = article.get("description", "")
             if desc:
-                ctk.CTkLabel(text_f, text=desc, font=ctk.CTkFont(size=11), anchor="w", justify="left", wraplength=550).pack(anchor="w", pady=(0, 4))
+                desc_box = self._create_highlighted_textbox(text_f, self.newsapi_frame, desc, search_terms, ctk.CTkFont(size=11), "white", 550, False, "")
+                desc_box.pack(anchor="w", pady=(0, 4))
 
     def on_time_period_change(self, selected_period):
         current_stock = self.stock_var.get()
@@ -987,9 +1191,37 @@ class App(ctk.CTk):
         symbols_list = [yahoo_sym, ft_sym, inv_sym]
         news_data = stock_fetcher.get_stock_news(stock_data.get("Ονομασία", yahoo_sym), symbols=symbols_list)
         
-        self.after(0, self._update_overview_ui, res_yahoo, ft_price, inv_price, news_data)
+        # Ανάκτηση δεδομένων RSS
+        rss_urls = []
+        if hasattr(self, 'url_rows'):
+            for row in self.url_rows:
+                if row["chk"].get() == 1 and row["type"].get() == "RSS":
+                    u_val = row["url"].get().strip()
+                    if u_val: rss_urls.append(u_val)
+                    
+        rss_data = []
+        if rss_urls:
+            kw = self.rss_keyword_entry.get().strip()
+            t_val = self.rss_time_var.get()
+            days_map = {"24 Ώρες": 1, "3 Ημέρες": 3, "7 Ημέρες": 7}
+            rss_data = stock_fetcher.get_rss_news(rss_urls, keyword=kw, days_limit=days_map.get(t_val))
 
-    def _update_overview_ui(self, res_yahoo, ft_price, inv_price, news_data=None):
+        self.after(0, self._update_overview_ui, res_yahoo, ft_price, inv_price, news_data, rss_data)
+
+    def _update_overview_ui(self, res_yahoo, ft_price, inv_price, news_data=None, rss_data=None):
+        quote_type = res_yahoo.get("quote_type")
+        is_index = (quote_type == 'INDEX')
+
+        # Απενεργοποίηση των on-demand APIs για δείκτες, καθώς δεν υποστηρίζονται
+        if is_index:
+            self.cb_av.configure(state="disabled")
+            self.cb_fh.configure(state="disabled")
+            if self.av_var.get() == 1: self.av_var.set(0); self.on_av_toggle()
+            if self.fh_var.get() == 1: self.fh_var.set(0); self.on_fh_toggle()
+        else:
+            self.cb_av.configure(state="normal")
+            self.cb_fh.configure(state="normal")
+
         if not res_yahoo.get("error"):
             self.l_yahoo.configure(text=res_yahoo.get("price", "N/A"))
             self.l_mcap.configure(text=res_yahoo.get("mcap", "N/A"))
@@ -1000,22 +1232,27 @@ class App(ctk.CTk):
             self.l_macd.configure(text=res_yahoo.get("macd", "N/A"))
             self.l_sma20.configure(text=res_yahoo.get("sma20", "N/A"))
             self.l_sma50.configure(text=res_yahoo.get("sma50", "N/A"))
-            self.l_rev_growth.configure(text=res_yahoo.get("rev_growth", "N/A"))
-            self.l_roe.configure(text=res_yahoo.get("roe", "N/A"))
-            self.l_op_margin.configure(text=res_yahoo.get("op_margin", "N/A"))
-            self.l_dte.configure(text=res_yahoo.get("dte", "N/A"))
-            self.l_fcf.configure(text=res_yahoo.get("fcf", "N/A"))
+            # Αυτά τα πεδία είναι N/A για ETFs/Indices, οπότε η ενημέρωση είναι ασφαλής
+            self.l_rev_growth.configure(text=res_yahoo.get("rev_growth", "N/A")); self.l_roe.configure(text=res_yahoo.get("roe", "N/A")); self.l_op_margin.configure(text=res_yahoo.get("op_margin", "N/A")); self.l_dte.configure(text=res_yahoo.get("dte", "N/A")); self.l_fcf.configure(text=res_yahoo.get("fcf", "N/A"))
             if "df" in res_yahoo:
                 self.draw_chart(res_yahoo["df"])
                 
             self.website_url = res_yahoo.get("website", "")
-            if self.website_url:
-                self.website_link_label.configure(text=f"🔗 {res_yahoo.get('domain', 'Website')}")
+            domain_text = res_yahoo.get('domain', '')
+            
+            if self.website_url: # Για μετοχές
+                self.website_link_label.configure(text=f"🔗 {domain_text or 'Website'}", cursor="hand2")
+                self.website_link_label.bind("<Button-1>", lambda e: webbrowser.open(self.website_url) if self.website_url else None)
                 self.website_link_label.pack(side="left", padx=(20, 10))
                 self.website_cb.pack(side="left")
             else:
-                self.website_link_label.pack_forget()
-                self.website_cb.pack_forget()
+                if domain_text: # Για ETFs (fundFamily) ή αν δεν υπάρχει URL
+                    self.website_link_label.configure(text=f"🏛️ {domain_text}", cursor="arrow")
+                    self.website_link_label.unbind("<Button-1>")
+                    self.website_link_label.pack(side="left", padx=(20, 10))
+                else: # Για δείκτες
+                    self.website_link_label.pack_forget()
+                self.website_cb.pack_forget() # Κρύβουμε το checkbox αν δεν υπάρχει link
         else:
             self.l_yahoo.configure(text="Σφάλμα")
             self.website_link_label.pack_forget()
@@ -1023,6 +1260,19 @@ class App(ctk.CTk):
             
         self.l_ft.configure(text=ft_price)
         self.l_inv.configure(text=inv_price)
+
+        selected_name = self.stock_var.get()
+        current_stock_data = next((item for item in self.user_data.get("watchlist", []) if item.get("Ονομασία") == selected_name), None)
+        notes_text = current_stock_data.get("Notes", "") if current_stock_data else ""
+
+        if notes_text:
+            self.notes_frame.pack(fill="x", pady=(10, 5), after=self.stats_frame)
+            self.notes_display_box.configure(state="normal")
+            self.notes_display_box.delete("1.0", "end")
+            self.notes_display_box.insert("1.0", notes_text)
+            self.notes_display_box.configure(state="disabled")
+        else:
+            self.notes_frame.pack_forget()
         
         # Ενημέρωση Ειδήσεων
         for widget in self.news_frame.winfo_children():
@@ -1109,6 +1359,9 @@ class App(ctk.CTk):
                 self.page_checkboxes.append((c_var, "Investing.com", i_url))
         else:
             ctk.CTkLabel(self.pages_frame, text="Δεν υπάρχουν αποθηκευμένα σύμβολα για αυτή τη μετοχή.", text_color="gray").pack(pady=20)
+            
+        # Ενημέρωση RSS Feeds
+        self._update_rss_ui(rss_data)
 
     def fetch_data(self):
         selected_name = self.stock_var.get()
@@ -1205,7 +1458,7 @@ class App(ctk.CTk):
                 
         if hasattr(self, 'url_rows'):
             for row in self.url_rows:
-                if row["chk"].get() == 1:
+                if row["chk"].get() == 1 and row["type"].get() == "URL":
                     t_val = row["title"].get().strip()
                     u_val = row["url"].get().strip()
                     if u_val:
@@ -1228,6 +1481,21 @@ class App(ctk.CTk):
                             
         if selected_urls:
             context += "\n\n[ΕΠΙΠΛΕΟΝ ΠΗΓΕΣ (WEB SCRAPING)]\n" + "\n\n".join(selected_urls)
+            
+        # Προσθήκη επιλεγμένων άρθρων RSS
+        if hasattr(self, 'rss_checkboxes'):
+            rss_selected = []
+            for chk_var, article in self.rss_checkboxes:
+                if chk_var.get() == 1:
+                    title = " ".join(article.get('title', '').split())
+                    desc = article.get('description', '')
+                    content = " ".join(desc.split()) if desc else ""
+                    
+                    r_url = article.get('url', '')
+                    rss_selected.append(f"• {title}: {content}")
+                    used_sources.append(f"RSS: {title}" + (f" ({r_url})" if r_url else ""))
+            if rss_selected:
+                context += "\n\n[ΕΠΙΛΕΓΜΕΝΑ ΑΡΘΡΑ ΑΠΟ RSS FEEDS]\n" + "\n".join(rss_selected)
 
         # Προσθήκη χειροκίνητων άρθρων
         if hasattr(self, 'article_boxes'):
@@ -1638,6 +1906,7 @@ class App(ctk.CTk):
         yahoo = self.stock_yahoo_entry.get().strip().upper()
         ft = self.stock_ft_entry.get().strip()
         inv = self.stock_inv_entry.get().strip()
+        notes = self.stock_notes_entry.get("1.0", "end-1c").strip()
         
         if not name or not yahoo:
             self.status_label.configure(text="❌ Συμπληρώστε Όνομα & Yahoo!", text_color="red")
@@ -1646,14 +1915,14 @@ class App(ctk.CTk):
         watchlist = self.user_data.get("watchlist", [])
         
         if hasattr(self, "editing_stock_index") and self.editing_stock_index is not None:
-            watchlist[self.editing_stock_index] = {"Ονομασία": name, "Yahoo": yahoo, "FT": ft, "Investing": inv}
+            watchlist[self.editing_stock_index] = {"Ονομασία": name, "Yahoo": yahoo, "FT": ft, "Investing": inv, "Notes": notes}
             self.editing_stock_index = None
             self.status_label.configure(text=f"✅ Τροποποιήθηκε: {name}", text_color="green")
         else:
             if any(s.get("Ονομασία") == name for s in watchlist):
                 self.status_label.configure(text="❌ Η μετοχή υπάρχει ήδη!", text_color="red")
                 return
-            watchlist.append({"Ονομασία": name, "Yahoo": yahoo, "FT": ft, "Investing": inv})
+            watchlist.append({"Ονομασία": name, "Yahoo": yahoo, "FT": ft, "Investing": inv, "Notes": notes})
             self.status_label.configure(text=f"✅ Προστέθηκε: {name}", text_color="green")
             self.stock_var.set(name)
             
@@ -1666,6 +1935,7 @@ class App(ctk.CTk):
         self.stock_yahoo_entry.delete(0, 'end')
         self.stock_ft_entry.delete(0, 'end')
         self.stock_inv_entry.delete(0, 'end')
+        self.stock_notes_entry.delete("1.0", 'end')
         self.save_stock_btn.configure(text="💾 Αποθήκευση Μετοχής")
 
     def move_stock_up(self, index):
@@ -1698,6 +1968,8 @@ class App(ctk.CTk):
             self.stock_ft_entry.insert(0, item.get("FT", ""))
             self.stock_inv_entry.delete(0, 'end')
             self.stock_inv_entry.insert(0, item.get("Investing", ""))
+            self.stock_notes_entry.delete("1.0", 'end')
+            self.stock_notes_entry.insert("1.0", item.get("Notes", ""))
             self.editing_stock_index = index
             self.save_stock_btn.configure(text="💾 Ενημέρωση Μετοχής")
 
@@ -1743,6 +2015,11 @@ class App(ctk.CTk):
         ctk.CTkLabel(self.pages_frame, text="Επιλέξτε μια μετοχή για να δείτε τους συνδέσμους.", text_color="gray").pack(pady=20)
         self.page_checkboxes = []
         
+        for widget in self.rss_frame.winfo_children():
+            widget.destroy()
+        ctk.CTkLabel(self.rss_frame, text=self.tr("rss_empty_msg"), text_color="gray").pack(pady=20)
+        self.rss_checkboxes = []
+        
         labels_to_reset = [
             self.l_yahoo, self.l_ft, self.l_inv, self.l_mcap, self.l_pe, self.l_div, self.l_beta,
             self.l_rsi, self.l_macd, self.l_sma20, self.l_sma50, self.l_av_pe, self.l_av_div, self.l_av_eps,
@@ -1751,6 +2028,12 @@ class App(ctk.CTk):
         ]
         for lbl in labels_to_reset:
             lbl.configure(text="---")
+        
+        if hasattr(self, 'notes_display_box'):
+            self.notes_display_box.configure(state="normal")
+            self.notes_display_box.delete("1.0", "end")
+            self.notes_display_box.configure(state="disabled")
+            self.notes_frame.pack_forget()
             
         if hasattr(self, 'article_boxes'):
             for box in self.article_boxes:
@@ -1784,6 +2067,13 @@ class App(ctk.CTk):
             self.av_key_entry.delete(0, 'end')
             self.finnhub_key_entry.delete(0, 'end')
             self.newsapi_key_entry.delete(0, 'end')
+
+            self.stock_name_entry.delete(0, 'end')
+            self.stock_yahoo_entry.delete(0, 'end')
+            self.stock_ft_entry.delete(0, 'end')
+            self.stock_inv_entry.delete(0, 'end')
+            self.stock_notes_entry.delete("1.0", 'end')
+            self.save_stock_btn.configure(text=self.tr("save_stock"))
             
             for row in self.url_rows:
                 row["frame"].destroy()

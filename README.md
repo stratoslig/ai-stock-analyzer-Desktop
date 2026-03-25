@@ -33,11 +33,12 @@
 - **Αυτόματες Ενημερώσεις**: Ενσωματωμένος έλεγχος (Auto-Update Check) μέσω GitHub API για άμεση ειδοποίηση νέων εκδόσεων.
 - **Σύγχρονο UI**: Σκοτεινό θέμα (Dark Mode) βασισμένο στο `CustomTkinter` με ανεξάρτητη κύλιση (split-scroll) στηλών, κουμπιά γρήγορης επικόλλησης (Clipboard) και λειτουργία Focus Mode (☰).
 - **Πολλαπλές Πηγές Δεδομένων**:
-  - *Yahoo Finance*: Ιστορικά δεδομένα, τιμές, P/E, Market Cap.
+  - *Yahoo Finance*: Υποστήριξη Μετοχών, ETFs και Χρηματιστηριακών Δεικτών (με αυτόματη προσαρμογή των metrics). Ιστορικά δεδομένα, τιμές, P/E, Market Cap.
   - *Οικονομική Υγεία & Απόδοση*: Άντληση και προβολή δεικτών όπως Revenue Growth, ROE, Debt to Equity και Free Cash Flow.
-  - *Alpha Vantage & Finnhub*: On-demand θεμελιώδη δεδομένα πραγματικού χρόνου μέσω API (PE, EPS, 52W High/Low, Live Τιμές).
-  - *NewsAPI.org*: Προηγμένη αναζήτηση ειδήσεων (ταξινομημένων βάσει σχετικότητας) με προσαρμοσμένες λέξεις-κλειδιά, γλώσσα, και επιλογή ημερομηνίας ("Από").
+  - *Alpha Vantage & Finnhub*: On-demand θεμελιώδη δεδομένα πραγματικού χρόνου μέσω API (PE, EPS, 52W High/Low, Live Τιμές), με έξυπνη δυναμική εμφάνιση/απόκρυψη στο UI.
+  - *NewsAPI.org*: Προηγμένη αναζήτηση ειδήσεων (ταξινομημένων βάσει σχετικότητας) με προσαρμοσμένες λέξεις-κλειδιά (υποστήριξη τελεστών `+` για AND, `,` για OR), αυτόματη οπτική επισήμανση (highlighting), επιλογή γλώσσας και ημερομηνίας.
   - *Financial Times & Investing.com*: Δευτερεύουσες πηγές ζωντανών τιμών (Web Scraping).
+- **Προσαρμοσμένα RSS Feeds**: Προσθήκη εξωτερικών πηγών RSS με ενσωματωμένα φίλτρα ανάγνωσης (τελεστές `+`/`,` και χρονικό περιθώριο), οπτική επισήμανση λέξεων και ενσωμάτωση στο AI. Υποστήριξη αναδιάταξης λίστας (βελάκια) και αυτόματης αποθήκευσης των URLs.
 - **Εισαγωγή Τοπικών Αρχείων & Άρθρων**: Υποστήριξη για μεταφόρτωση τοπικών αρχείων **PDF και TXT**, καθώς και ειδικά πεδία για χειροκίνητη επικόλληση συγκεκριμένων άρθρων, τα οποία διαβάζονται και αναλύονται από το AI.
 - **Ανάλυση Τάσης (Trend) & Δείκτες**: Υπολογισμός τάσης βάσει κινητών μέσων όρων (SMA 20/50) και ενδείξεις RSI (Υπεραγόρασμένη/Υπερπουλημένη).
 - **Δυναμικά Γραφήματα (Matplotlib)**: Επαγγελματικά γραφήματα 4 επιπέδων (ειδικό απομονωμένο Hover Track στην κορυφή, Διαγράμματα Κεριών με κλειδωμένα όρια Y-axis, Όγκος Συναλλαγών και RSI), με δυνατότητα μεγέθυνσης σε νέο παράθυρο.
@@ -91,9 +92,10 @@ python desktop_app.py
 ```
 
 1. **Προσθήκη API Keys**: Από το αριστερό μενού (Πλευρική Μπάρα), εισάγετε τα API Keys σας και πατήστε "Αποθήκευση API Keys". 
-2. **Watchlist**: Διαχειριστείτε (προσθήκη, επεξεργασία, διαγραφή, αναδιάταξη με βελάκια ⬆️/⬇️) τις μετοχές σας, συμπεριλαμβάνοντας επιπλέον σύμβολα (π.χ. FT ή Investing.com).
+2. **Watchlist**: Διαχειριστείτε (προσθήκη, επεξεργασία, προσωπικές σημειώσεις, διαγραφή, αναδιάταξη με βελάκια ⬆️/⬇️) τις μετοχές, τα ETFs και τους δείκτες σας, συμπεριλαμβάνοντας επιπλέον σύμβολα (π.χ. FT ή Investing.com).
 3. **Επιλογή Πηγών**: Στο κεντρικό παράθυρο, επιλέξτε τις πηγές δεδομένων (Alpha Vantage, Finnhub, NewsAPI.org), τις ειδήσεις, τον εταιρικό ιστότοπο ή τα δικά σας URLs. Μπορείτε να φιλτράρετε το NewsAPI ανά Λέξη-Κλειδί, Γλώσσα και Ημερομηνία.
-4. **Εκτέλεση**: Πατήστε "Έναρξη Ανάλυσης". Μόλις ολοκληρωθεί, το αποτέλεσμα θα εμφανιστεί στο κείμενο, και θα αποθηκευτεί στο "Ιστορικό Αναλύσεων" στο κάτω μέρος.
+4. **RSS Feeds**: Προσθέστε URLs ως "RSS", εφαρμόστε φίλτρα και επιλέξτε τα επιθυμημένα άρθρα από το Tab "RSS Feeds" για να ενσωματωθούν στην ανάλυση.
+5. **Εκτέλεση**: Πατήστε "Έναρξη Ανάλυσης". Μόλις ολοκληρωθεί, το αποτέλεσμα θα εμφανιστεί στο κείμενο, και θα αποθηκευτεί στο "Ιστορικό Αναλύσεων" στο κάτω μέρος.
 
 ---
 
@@ -143,11 +145,12 @@ python desktop_app.py
 - **Auto-Updates**: Built-in update checker via GitHub API for instant new release notifications.
 - **Modern UI**: Dark Mode theme based on `CustomTkinter` with split-scroll columns, quick clipboard paste buttons, and Focus Mode (☰).
 - **Multiple Data Sources**:
-  - *Yahoo Finance*: Historical data, prices, P/E, Market Cap.
+  - *Yahoo Finance*: Support for Stocks, ETFs, and Market Indexes (with automatic metric adaptation). Historical data, prices, P/E, Market Cap.
   - *Financial Health & Performance*: Extraction and display of metrics like Revenue Growth, ROE, Debt to Equity, and Free Cash Flow.
-  - *Alpha Vantage & Finnhub*: On-demand real-time fundamental data via API (PE, EPS, 52W High/Low, Live Prices).
-  - *NewsAPI.org*: Advanced news search (sorted by relevancy) with custom keyword, language, and date ("From") filters.
+  - *Alpha Vantage & Finnhub*: On-demand real-time fundamental data via API (PE, EPS, 52W High/Low, Live Prices), dynamically hidden/shown in the UI.
+  - *NewsAPI.org*: Advanced news search (sorted by relevancy) with custom keyword operators (`+` for AND, `,` for OR), automatic visual highlighting, language, and date ("From") filters.
   - *Financial Times & Investing.com*: Secondary live price sources (Web Scraping).
+- **Custom RSS Feeds**: Add external RSS sources with built-in reading filters (by keyword using `+`/`,` operators and timeframe), visual highlighting, to integrate news into the AI context. Supports dynamic URL reordering with auto-save.
 - **Local Files & Articles Import**: Support for uploading local **PDF and TXT** files, along with specific textboxes for manual article pasting, which the AI reads and analyzes.
 - **Trend Analysis & Indicators**: Trend calculation based on moving averages (SMA/EMA 20/50) and RSI indicators (Overbought/Oversold).
 - **Dynamic Charts (Matplotlib)**: Professional 4-layer charts (isolated Hover Track at the top, Candlesticks with locked Y-axis limits, Volume, and RSI), with the ability to maximize in a new window.
@@ -169,22 +172,53 @@ python desktop_app.py
 - *(Optional but recommended)* API Keys for **Google Gemini**, **Alpha Vantage**, **Finnhub**, and **NewsAPI.org**.
 - *(Optional)* Installed Ollama if you wish to run models locally.
 
-### Execution
-1. **Clone the repository:** `git clone https://github.com/stratoslig/ai-stock-analyzer-Desktop.git`
-2. **Create a Virtual Environment:** `python -m venv venv` and activate it.
-3. **Install libraries:** `pip install -r requirements.txt`
-4. **Run the app:** `python desktop_app.py`
+### Installation Steps
+
+1. **Clone the repository:**
+   ```bash
+   git clone https://github.com/stratoslig/ai-stock-analyzer-Desktop.git
+   cd ai-stock-analyzer-Desktop
+   ```
+
+2. **Create a Virtual Environment:**
+   ```bash
+   python -m venv venv
+   # Activate on Windows:
+   venv\Scripts\activate
+   # Activate on macOS/Linux:
+   source venv/bin/activate
+   ```
+
+3. **Install dependencies:**
+   ```bash
+   pip install -r requirements.txt
+   ```
 
 ---
 
-## 📂 Project Structure
+## 💻 Usage
+
+To launch the application, run:
+```bash
+python desktop_app.py
+```
+
+1. **Add API Keys**: From the left menu (Sidebar), enter your API Keys and click "Save Keys". 
+2. **Watchlist**: Manage (add, edit, personal notes, delete, reorder with ⬆️/⬇️ arrows) your stocks, ETFs, and indexes, including additional symbols (e.g. FT or Investing.com).
+3. **Select Sources**: In the main window, select the data sources (Alpha Vantage, Finnhub, NewsAPI.org), the news, the corporate site, or your own URLs. You can filter NewsAPI by Keyword, Language, and Date.
+4. **RSS Feeds**: Add URLs as "RSS", apply filters, and select the desired articles from the "RSS Feeds" Tab to include them in the analysis.
+5. **Execution**: Click "Start Analysis". Once completed, the result will appear in the text area and will be saved in the "Analysis History" at the bottom.
+
+---
+
+## � Project Structure
 - `desktop_app.py`: The main GUI file using CustomTkinter and Matplotlib.
-- `translations.py`: Application dictionary for multilingual (i18n) support.
-- `stock_fetcher.py`: Data management, web scraping and APIs (Yahoo, Alpha Vantage, Finnhub).
+- `stock_fetcher.py`: Data management, web scraping (prices, news, URLs extraction) and APIs (Yahoo, Alpha Vantage, Finnhub).
 - `ai_service.py`: Management of LLMs (Google Gemini, Ollama) and generation of the analysis.
 - `data_manager.py`: Secure loading and saving of user settings (`user_data.json`).
 - `document_exporter.py`: Exporting the generated AI report to a Word document (.docx).
-- `ARCHITECTURE.md`: Detailed technical description of the code architecture.
+- `requirements.txt`: The necessary Python libraries.
+- `architecture.md`: Detailed technical description of the code architecture.
 
 ---
 *⚠️ **Disclaimer**: This software is intended strictly for educational and informational purposes. Under no circumstances does it constitute investment or financial advice. Always Do Your Own Research (DYOR) before making any investment.*

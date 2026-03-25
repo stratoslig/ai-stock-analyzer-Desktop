@@ -11,3 +11,5 @@ pyinstaller
 matplotlib
 PyPDF2
 trafilatura
+feedparser
+python-dateutil

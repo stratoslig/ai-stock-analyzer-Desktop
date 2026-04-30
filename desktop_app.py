@@ -99,45 +99,94 @@ class App(ctk.CTk):
         except Exception:
             pass
             
-        self.grid_columnconfigure(1, weight=1)
-        self.grid_rowconfigure(0, weight=1)
-        self.grid_columnconfigure(0, minsize=390)
+        self.grid_columnconfigure(0, weight=1)
+        self.grid_rowconfigure(0, weight=0)
+        self.grid_rowconfigure(1, weight=1)
 
-        # --- ΠΛΕΥΡΙΚΗ ΜΠΑΡΑ ---
-        self.sidebar_frame = ctk.CTkScrollableFrame(self, width=380, corner_radius=0)
+        # --- ΚΕΝΤΡΙΚΗ ΜΠΑΡΑ (HEADER) ---
+        header_frame = ctk.CTkFrame(self, fg_color="transparent")
+        header_frame.grid(row=0, column=0, sticky="ew", padx=10, pady=(10, 5))
+        
+        self.active_border_color = "#6aa3cc"
+        
+        self.toggle_settings_btn = ctk.CTkButton(header_frame, text=self.tr("settings_btn"), width=110, height=32, corner_radius=15, font=ctk.CTkFont(weight="bold"), border_width=1, border_color=self.active_border_color, command=self.toggle_settings)
+        self.toggle_settings_btn.pack(side="left", padx=5)
+        
+        self.toggle_data_btn = ctk.CTkButton(header_frame, text=self.tr("data_btn"), width=110, height=32, corner_radius=15, font=ctk.CTkFont(weight="bold"), border_width=1, border_color=self.active_border_color, command=self.toggle_data)
+        self.toggle_data_btn.pack(side="left", padx=5)
+        
+        self.toggle_overview_btn = ctk.CTkButton(header_frame, text=self.tr("overview_title"), width=130, height=32, corner_radius=15, font=ctk.CTkFont(weight="bold"), border_width=1, border_color=self.active_border_color, command=self.toggle_overview)
+        self.toggle_overview_btn.pack(side="left", padx=5)
+
+        self.active_btn_color = self.toggle_settings_btn.cget("fg_color")
+        self.inactive_btn_color = "#444444"
+        self.active_text_color = self.toggle_settings_btn.cget("text_color")
+        self.inactive_text_color = "gray"
+
+        title_lbl = ctk.CTkLabel(header_frame, text="📈 AI Stock Analyzer Desktop", font=ctk.CTkFont(size=24, weight="bold"))
+        title_lbl.pack(side="left", expand=True)
+
+        self.about_btn = ctk.CTkButton(header_frame, text=self.tr("about_btn"), width=80, height=32, corner_radius=15, font=ctk.CTkFont(weight="bold"), fg_color="transparent", border_width=1, text_color="gray", hover_color="#333", command=self.show_about_window)
+        self.about_btn.pack(side="right", padx=5)
+
+        # --- ΚΕΝΤΡΙΚΟ ΠΕΡΙΕΧΟΜΕΝΟ ---
+        self.content_frame = ctk.CTkFrame(self, fg_color="transparent")
+        self.content_frame.grid(row=1, column=0, sticky="nsew")
+        self.content_frame.grid_rowconfigure(0, weight=1)
+        self.content_frame.grid_columnconfigure(0, minsize=390, weight=0)
+        self.content_frame.grid_columnconfigure(1, minsize=430, weight=1)
+        self.content_frame.grid_columnconfigure(2, weight=3)
+
+        # --- ΣΤΗΛΗ 1: ΡΥΘΜΙΣΕΙΣ ---
+        self.sidebar_frame = ctk.CTkScrollableFrame(self.content_frame, width=380, corner_radius=0)
         self.sidebar_frame.grid(row=0, column=0, sticky="nsew")
-        self.sidebar_frame.grid_rowconfigure(21, weight=1)
+        self.sidebar_frame.grid_rowconfigure(4, weight=1)
         self.sidebar_frame.grid_columnconfigure(0, weight=1)
 
-        ctk.CTkLabel(self.sidebar_frame, text=self.tr("language"), font=ctk.CTkFont(size=12, weight="bold")).grid(row=0, column=0, padx=20, pady=(15, 0), sticky="w")
+        # 1. ΠΛΑΙΣΙΟ ΓΛΩΣΣΑΣ
+        lang_frame = ctk.CTkFrame(self.sidebar_frame, fg_color="#141414", corner_radius=8, border_width=1, border_color="#333333")
+        lang_frame.grid(row=0, column=0, padx=10, pady=(10, 5), sticky="ew")
+        lang_frame.grid_columnconfigure(0, weight=1)
+        
+        self.lang_header_btn = self._create_collapsible_header(lang_frame, self.tr("language"))
         self.lang_var = ctk.StringVar(value="Ελληνικά" if self.user_data.get("language", "el") == "el" else "English")
-        self.lang_menu = ctk.CTkOptionMenu(self.sidebar_frame, variable=self.lang_var, values=["Ελληνικά", "English"], command=self.change_language)
-        self.lang_menu.grid(row=1, column=0, padx=20, pady=5, sticky="ew")
+        self.lang_menu = ctk.CTkOptionMenu(lang_frame, variable=self.lang_var, values=["Ελληνικά", "English"], command=self.change_language)
+        self.lang_menu.grid(row=1, column=0, padx=10, pady=(5, 10), sticky="ew")
 
-        ctk.CTkLabel(self.sidebar_frame, text=self.tr("ai_provider"), font=ctk.CTkFont(size=12, weight="bold")).grid(row=2, column=0, padx=20, pady=(10, 0), sticky="w")
-        self.ai_provider_menu = ctk.CTkOptionMenu(self.sidebar_frame, values=["Gemini (Cloud)", "Ollama (Τοπικά)"], command=self.update_models)
-        self.ai_provider_menu.grid(row=3, column=0, padx=20, pady=5, sticky="ew")
+        # 2. ΠΛΑΙΣΙΟ AI ΠΑΡΟΧΟΥ / ΜΟΝΤΕΛΟΥ
+        ai_frame = ctk.CTkFrame(self.sidebar_frame, fg_color="#141414", corner_radius=8, border_width=1, border_color="#333333")
+        ai_frame.grid(row=1, column=0, padx=10, pady=5, sticky="ew")
+        ai_frame.grid_columnconfigure(0, weight=1)
 
-        temp_frame = ctk.CTkFrame(self.sidebar_frame, fg_color="transparent")
-        temp_frame.grid(row=4, column=0, padx=20, pady=(5, 0), sticky="ew")
+        self._create_collapsible_header(ai_frame, self.tr("ai_provider"))
+        self.ai_provider_menu = ctk.CTkOptionMenu(ai_frame, values=["Gemini (Cloud)", "Ollama (Τοπικά)"], command=self.update_models)
+        self.ai_provider_menu.grid(row=1, column=0, padx=10, pady=5, sticky="ew")
+
+        temp_frame = ctk.CTkFrame(ai_frame, fg_color="transparent")
+        temp_frame.grid(row=2, column=0, padx=10, pady=(5, 0), sticky="ew")
         ctk.CTkLabel(temp_frame, text=self.tr("temperature"), font=ctk.CTkFont(size=12, weight="bold")).pack(side="left")
         self.temp_val_label = ctk.CTkLabel(temp_frame, text="0.7", font=ctk.CTkFont(size=12))
         self.temp_val_label.pack(side="right")
         
-        self.temperature_slider = ctk.CTkSlider(self.sidebar_frame, from_=0.0, to=1.0, number_of_steps=10, command=self.update_temp_label)
+        self.temperature_slider = ctk.CTkSlider(ai_frame, from_=0.0, to=1.0, number_of_steps=10, command=self.update_temp_label)
         self.temperature_slider.set(0.7)
-        self.temperature_slider.grid(row=5, column=0, padx=20, pady=5, sticky="ew")
+        self.temperature_slider.grid(row=3, column=0, padx=10, pady=5, sticky="ew")
         ToolTip(self.temperature_slider, self.tr("tt_temp"))
 
-        ctk.CTkLabel(self.sidebar_frame, text=self.tr("installed_models"), font=ctk.CTkFont(size=12, weight="bold")).grid(row=6, column=0, padx=20, pady=(5, 0), sticky="w")
+        ctk.CTkLabel(ai_frame, text=self.tr("installed_models"), font=ctk.CTkFont(size=12, weight="bold")).grid(row=4, column=0, padx=10, pady=(5, 0), sticky="w")
         self.ai_model_var = ctk.StringVar(value="Φόρτωση...")
-        self.ai_model_menu = ctk.CTkOptionMenu(self.sidebar_frame, variable=self.ai_model_var, values=["Φόρτωση..."])
-        self.ai_model_menu.grid(row=7, column=0, padx=20, pady=5, sticky="ew")
+        self.ai_model_menu = ctk.CTkOptionMenu(ai_frame, variable=self.ai_model_var, values=["Φόρτωση..."])
+        self.ai_model_menu.grid(row=5, column=0, padx=10, pady=(5, 10), sticky="ew")
 
-        ctk.CTkLabel(self.sidebar_frame, text=self.tr("api_keys"), font=ctk.CTkFont(size=14, weight="bold")).grid(row=8, column=0, padx=20, pady=(10, 0), sticky="w")
+        # 3. ΠΛΑΙΣΙΟ API KEYS
+        api_frame = ctk.CTkFrame(self.sidebar_frame, fg_color="#141414", corner_radius=8, border_width=1, border_color="#333333")
+        api_frame.grid(row=2, column=0, padx=10, pady=5, sticky="ew")
+        api_frame.grid_columnconfigure(0, weight=1)
+
+        self.api_header_btn = self._create_collapsible_header(api_frame, self.tr("api_keys"))
         
-        f_api1 = ctk.CTkFrame(self.sidebar_frame, fg_color="transparent")
-        f_api1.grid(row=9, column=0, padx=20, pady=2, sticky="ew")
+        f_api1 = ctk.CTkFrame(api_frame, fg_color="transparent")
+        f_api1.grid(row=1, column=0, padx=10, pady=2, sticky="ew")
         ctk.CTkLabel(f_api1, text="Gemini API Key:", font=ctk.CTkFont(size=11), text_color="gray").pack(anchor="w")
         row_api1 = ctk.CTkFrame(f_api1, fg_color="transparent")
         row_api1.pack(fill="x")
@@ -147,8 +196,8 @@ class App(ctk.CTk):
         ctk.CTkButton(row_api1, text="📋", width=25, fg_color="#444", hover_color="#555", command=lambda: self.paste_to_entry(self.api_key_entry)).pack(side="right", padx=(5, 0))
         ToolTip(self.api_key_entry, self.tr("tt_api_gemini"))
 
-        f_api2 = ctk.CTkFrame(self.sidebar_frame, fg_color="transparent")
-        f_api2.grid(row=10, column=0, padx=20, pady=2, sticky="ew")
+        f_api2 = ctk.CTkFrame(api_frame, fg_color="transparent")
+        f_api2.grid(row=2, column=0, padx=10, pady=2, sticky="ew")
         ctk.CTkLabel(f_api2, text="Alpha Vantage Key:", font=ctk.CTkFont(size=11), text_color="gray").pack(anchor="w")
         row_api2 = ctk.CTkFrame(f_api2, fg_color="transparent")
         row_api2.pack(fill="x")
@@ -158,8 +207,8 @@ class App(ctk.CTk):
         ctk.CTkButton(row_api2, text="📋", width=25, fg_color="#444", hover_color="#555", command=lambda: self.paste_to_entry(self.av_key_entry)).pack(side="right", padx=(5, 0))
         ToolTip(self.av_key_entry, self.tr("tt_api_av"))
 
-        f_api3 = ctk.CTkFrame(self.sidebar_frame, fg_color="transparent")
-        f_api3.grid(row=11, column=0, padx=20, pady=2, sticky="ew")
+        f_api3 = ctk.CTkFrame(api_frame, fg_color="transparent")
+        f_api3.grid(row=3, column=0, padx=10, pady=2, sticky="ew")
         ctk.CTkLabel(f_api3, text="Finnhub Key:", font=ctk.CTkFont(size=11), text_color="gray").pack(anchor="w")
         row_api3 = ctk.CTkFrame(f_api3, fg_color="transparent")
         row_api3.pack(fill="x")
@@ -169,8 +218,8 @@ class App(ctk.CTk):
         ctk.CTkButton(row_api3, text="📋", width=25, fg_color="#444", hover_color="#555", command=lambda: self.paste_to_entry(self.finnhub_key_entry)).pack(side="right", padx=(5, 0))
         ToolTip(self.finnhub_key_entry, self.tr("tt_api_fh"))
 
-        f_api4 = ctk.CTkFrame(self.sidebar_frame, fg_color="transparent")
-        f_api4.grid(row=12, column=0, padx=20, pady=2, sticky="ew")
+        f_api4 = ctk.CTkFrame(api_frame, fg_color="transparent")
+        f_api4.grid(row=4, column=0, padx=10, pady=2, sticky="ew")
         ctk.CTkLabel(f_api4, text="NewsAPI Key:", font=ctk.CTkFont(size=11), text_color="gray").pack(anchor="w")
         row_api4 = ctk.CTkFrame(f_api4, fg_color="transparent")
         row_api4.pack(fill="x")
@@ -180,97 +229,110 @@ class App(ctk.CTk):
         ctk.CTkButton(row_api4, text="📋", width=25, fg_color="#444", hover_color="#555", command=lambda: self.paste_to_entry(self.newsapi_key_entry)).pack(side="right", padx=(5, 0))
         ToolTip(self.newsapi_key_entry, self.tr("tt_api_news"))
 
-        self.save_settings_btn = ctk.CTkButton(self.sidebar_frame, text=self.tr("save_keys"), command=self.save_keys, fg_color="#2b2b2b", hover_color="#3b3b3b")
-        self.save_settings_btn.grid(row=13, column=0, padx=20, pady=(5, 10), sticky="ew")
+        self.save_settings_btn = ctk.CTkButton(api_frame, text=self.tr("save_keys"), command=self.save_keys, fg_color="#2b2b2b", hover_color="#3b3b3b")
+        self.save_settings_btn.grid(row=5, column=0, padx=10, pady=(5, 10), sticky="ew")
+        self.add_hover_border(self.save_settings_btn, "#6aa3cc")
 
-        ctk.CTkLabel(self.sidebar_frame, text=self.tr("stock_management"), font=ctk.CTkFont(size=14, weight="bold")).grid(row=14, column=0, padx=20, pady=(10, 0), sticky="w")
+        # 4. ΠΛΑΙΣΙΟ ΔΙΑΧΕΙΡΙΣΗΣ ΜΕΤΟΧΗΣ
+        self.stock_mng_frame = ctk.CTkFrame(self.sidebar_frame, fg_color="#141414", corner_radius=8, border_width=1, border_color="#333333")
+        self.stock_mng_frame.grid(row=3, column=0, padx=10, pady=5, sticky="ew")
+        self.stock_mng_frame.grid_columnconfigure(0, weight=1)
 
-        f_stk1 = ctk.CTkFrame(self.sidebar_frame, fg_color="transparent")
-        f_stk1.grid(row=15, column=0, padx=20, pady=2, sticky="ew")
+        self.stock_mng_header_btn = self._create_collapsible_header(self.stock_mng_frame, self.tr("stock_management"))
+
+        f_stk1 = ctk.CTkFrame(self.stock_mng_frame, fg_color="transparent")
+        f_stk1.grid(row=1, column=0, padx=10, pady=2, sticky="ew")
         self.stock_name_entry = ctk.CTkEntry(f_stk1, placeholder_text=self.tr("stock_name"))
         self.stock_name_entry.pack(side="left", fill="x", expand=True)
         ctk.CTkButton(f_stk1, text="📋", width=25, fg_color="#444", hover_color="#555", command=lambda: self.paste_to_entry(self.stock_name_entry)).pack(side="right", padx=(5, 0))
         
-        f_stk2 = ctk.CTkFrame(self.sidebar_frame, fg_color="transparent")
-        f_stk2.grid(row=16, column=0, padx=20, pady=2, sticky="ew")
+        f_stk2 = ctk.CTkFrame(self.stock_mng_frame, fg_color="transparent")
+        f_stk2.grid(row=2, column=0, padx=10, pady=2, sticky="ew")
         self.stock_yahoo_entry = ctk.CTkEntry(f_stk2, placeholder_text="Yahoo Symbol")
         self.stock_yahoo_entry.pack(side="left", fill="x", expand=True)
         ctk.CTkButton(f_stk2, text="📋", width=25, fg_color="#444", hover_color="#555", command=lambda: self.paste_to_entry(self.stock_yahoo_entry)).pack(side="right", padx=(5, 0))
         
-        f_stk3 = ctk.CTkFrame(self.sidebar_frame, fg_color="transparent")
-        f_stk3.grid(row=17, column=0, padx=20, pady=2, sticky="ew")
+        f_stk3 = ctk.CTkFrame(self.stock_mng_frame, fg_color="transparent")
+        f_stk3.grid(row=3, column=0, padx=10, pady=2, sticky="ew")
         self.stock_ft_entry = ctk.CTkEntry(f_stk3, placeholder_text="Financial Times Symbol")
         self.stock_ft_entry.pack(side="left", fill="x", expand=True)
         ctk.CTkButton(f_stk3, text="📋", width=25, fg_color="#444", hover_color="#555", command=lambda: self.paste_to_entry(self.stock_ft_entry)).pack(side="right", padx=(5, 0))
         
-        f_stk4 = ctk.CTkFrame(self.sidebar_frame, fg_color="transparent")
-        f_stk4.grid(row=18, column=0, padx=20, pady=2, sticky="ew")
+        f_stk4 = ctk.CTkFrame(self.stock_mng_frame, fg_color="transparent")
+        f_stk4.grid(row=4, column=0, padx=10, pady=2, sticky="ew")
         self.stock_inv_entry = ctk.CTkEntry(f_stk4, placeholder_text="Investing.com Symbol")
         self.stock_inv_entry.pack(side="left", fill="x", expand=True)
         ctk.CTkButton(f_stk4, text="📋", width=25, fg_color="#444", hover_color="#555", command=lambda: self.paste_to_entry(self.stock_inv_entry)).pack(side="right", padx=(5, 0))
 
-        f_stk5 = ctk.CTkFrame(self.sidebar_frame, fg_color="transparent")
-        f_stk5.grid(row=19, column=0, padx=20, pady=2, sticky="ew")
+        f_stk5 = ctk.CTkFrame(self.stock_mng_frame, fg_color="transparent")
+        f_stk5.grid(row=5, column=0, padx=10, pady=2, sticky="ew")
         ctk.CTkLabel(f_stk5, text=self.tr("stock_notes"), font=ctk.CTkFont(size=11), text_color="gray").pack(anchor="w")
         self.stock_notes_entry = ctk.CTkTextbox(f_stk5, height=60)
         self.stock_notes_entry.pack(fill="x", expand=True)
 
-        self.save_stock_btn = ctk.CTkButton(self.sidebar_frame, text=self.tr("save_stock"), command=self.save_stock, fg_color="#2b2b2b", hover_color="#3b3b3b")
-        self.save_stock_btn.grid(row=20, column=0, padx=20, pady=(5, 10), sticky="ew")
+        self.save_stock_btn = ctk.CTkButton(self.stock_mng_frame, text=self.tr("save_stock"), command=self.save_stock, fg_color="#2b2b2b", hover_color="#3b3b3b")
+        self.save_stock_btn.grid(row=6, column=0, padx=10, pady=(5, 10), sticky="ew")
+        self.add_hover_border(self.save_stock_btn, "#6aa3cc")
 
-        ctk.CTkLabel(self.sidebar_frame, text=self.tr("watchlist"), font=ctk.CTkFont(size=14, weight="bold")).grid(row=21, column=0, padx=20, pady=(10, 5), sticky="w")
+        # 5. ΠΛΑΙΣΙΟ WATCHLIST
+        wl_frame = ctk.CTkFrame(self.sidebar_frame, fg_color="#141414", corner_radius=8, border_width=1, border_color="#333333")
+        wl_frame.grid(row=4, column=0, padx=10, pady=5, sticky="nsew")
+        wl_frame.grid_columnconfigure(0, weight=1)
+        wl_frame.grid_rowconfigure(1, weight=1)
 
-        self.watchlist_frame = ctk.CTkScrollableFrame(self.sidebar_frame, height=280)
-        self.watchlist_frame.grid(row=22, column=0, padx=10, pady=(0, 10), sticky="nsew")
-        self.sidebar_frame.grid_rowconfigure(22, weight=1)
+        self._create_collapsible_header(wl_frame, self.tr("watchlist"))
 
-        self.clear_cache_btn = ctk.CTkButton(self.sidebar_frame, text=self.tr("clear_cache"), fg_color="transparent", border_width=1, text_color="gray", command=self.clear_cache)
-        self.clear_cache_btn.grid(row=23, column=0, padx=20, pady=10, sticky="ew")
+        self.watchlist_frame = ctk.CTkScrollableFrame(wl_frame, height=280)
+        self.watchlist_frame.grid(row=1, column=0, padx=10, pady=(0, 10), sticky="nsew")
+
+        # 6. ΠΛΑΙΣΙΟ ΕΚΚΑΘΑΡΙΣΗΣ ΚΛΠ
+        sys_frame = ctk.CTkFrame(self.sidebar_frame, fg_color="#141414", corner_radius=8, border_width=1, border_color="#333333")
+        sys_frame.grid(row=5, column=0, padx=10, pady=(5, 10), sticky="ew")
+        sys_frame.grid_columnconfigure(0, weight=1)
+
+        self.sys_header_btn = self._create_collapsible_header(sys_frame, "⚙️ Σύστημα")
+
+        self.clear_cache_btn = ctk.CTkButton(sys_frame, text=self.tr("clear_cache"), fg_color="transparent", border_width=1, text_color="gray", command=self.clear_cache)
+        self.clear_cache_btn.grid(row=1, column=0, padx=10, pady=(5, 5), sticky="ew")
         ToolTip(self.clear_cache_btn, self.tr("tt_clear_cache"))
 
-        self.clear_all_data_btn = ctk.CTkButton(self.sidebar_frame, text=self.tr("clear_all"), fg_color="transparent", border_width=1, text_color="#d9534f", hover_color="#3b1a1a", command=self.clear_all_data)
-        self.clear_all_data_btn.grid(row=24, column=0, padx=20, pady=(0, 10), sticky="ew")
+        self.clear_all_data_btn = ctk.CTkButton(sys_frame, text=self.tr("clear_all"), fg_color="transparent", border_width=1, text_color="#d9534f", hover_color="#3b1a1a", command=self.clear_all_data)
+        self.clear_all_data_btn.grid(row=2, column=0, padx=10, pady=(5, 10), sticky="ew")
         ToolTip(self.clear_all_data_btn, self.tr("tt_clear_all"))
 
-        self.status_label = ctk.CTkLabel(self.sidebar_frame, text="", text_color="green")
-        self.status_label.grid(row=25, column=0, pady=(0, 10))
+        self.status_label = ctk.CTkLabel(sys_frame, text="", text_color="green")
+        self.status_label.grid(row=3, column=0, pady=(0, 10))
 
         self.update_watchlist_table()
 
-        # --- ΚΥΡΙΩΣ ΧΩΡΟΣ ---
-        self.main_container = ctk.CTkFrame(self, corner_radius=0, fg_color="transparent")
-        self.main_container.grid(row=0, column=1, sticky="nsew")
-        self.main_container.grid_columnconfigure(0, weight=1, minsize=430)
-        self.main_container.grid_columnconfigure(1, weight=3)
-        self.main_container.grid_rowconfigure(1, weight=1)
+        # --- ΣΤΗΛΗ 2: ΔΕΔΟΜΕΝΑ ---
+        self.data_scroll_frame = ctk.CTkScrollableFrame(self.content_frame)
+        self.data_scroll_frame.grid(row=0, column=1, sticky="nsew", padx=(5, 5), pady=(0, 10))
+        self.data_scroll_frame.grid_columnconfigure(0, weight=1)
 
-        header_frame = ctk.CTkFrame(self.main_container, fg_color="transparent")
-        header_frame.grid(row=0, column=0, columnspan=2, sticky="ew", padx=20, pady=(20, 10))
-        
-        self.toggle_sidebar_btn = ctk.CTkButton(header_frame, text="☰", width=40, font=ctk.CTkFont(size=20), command=self.toggle_sidebar)
-        self.toggle_sidebar_btn.pack(side="left", padx=(0, 10))
-        title_lbl = ctk.CTkLabel(header_frame, text="📈 AI Stock Analyzer Desktop", font=ctk.CTkFont(size=24, weight="bold"))
-        title_lbl.pack(side="left")
+        # --- ΣΤΗΛΗ 3: ΕΠΙΣΚΟΠΗΣΗ ---
+        self.overview_scroll_frame = ctk.CTkScrollableFrame(self.content_frame)
+        self.overview_scroll_frame.grid(row=0, column=2, sticky="nsew", padx=(5, 10), pady=(0, 10))
+        self.overview_scroll_frame.grid_columnconfigure(0, weight=1)
 
-        self.about_btn = ctk.CTkButton(header_frame, text=self.tr("about_btn"), width=80, fg_color="transparent", border_width=1, text_color="gray", hover_color="#333", command=self.show_about_window)
-        self.about_btn.pack(side="right", padx=10)
-
-        self.left_scroll_frame = ctk.CTkScrollableFrame(self.main_container, fg_color="transparent")
-        self.left_scroll_frame.grid(row=1, column=0, sticky="nsew", padx=(10, 5), pady=(0, 10))
-        self.left_scroll_frame.grid_columnconfigure(0, weight=1)
-
-        self.right_scroll_frame = ctk.CTkScrollableFrame(self.main_container, fg_color="transparent")
-        self.right_scroll_frame.grid(row=1, column=1, sticky="nsew", padx=(5, 10), pady=(0, 10))
-        self.right_scroll_frame.grid_columnconfigure(0, weight=1)
+        ToolTip(self.toggle_settings_btn, lambda: self.tr("cannot_hide") if (self.sidebar_frame.winfo_viewable() and not self.data_scroll_frame.winfo_viewable() and not self.overview_scroll_frame.winfo_viewable()) else "")
+        ToolTip(self.toggle_data_btn, lambda: self.tr("cannot_hide") if (self.data_scroll_frame.winfo_viewable() and not self.sidebar_frame.winfo_viewable() and not self.overview_scroll_frame.winfo_viewable()) else "")
+        ToolTip(self.toggle_overview_btn, lambda: self.tr("cannot_hide") if (self.overview_scroll_frame.winfo_viewable() and not self.sidebar_frame.winfo_viewable() and not self.data_scroll_frame.winfo_viewable()) else "")
 
         self._build_data_pane(row=0, col=0)
-        self._build_history_pane(row=1, col=0)
         self._build_overview_pane(row=0, col=0)
 
         self.update_dropdown()
         self.update_models()
+        self.update_history_ui()
         
         self.check_for_updates()
+
+        self._toggle_collapsible(lang_frame, self.lang_header_btn, self.tr("language"))
+        self._toggle_collapsible(api_frame, self.api_header_btn, self.tr("api_keys"))
+        self._toggle_collapsible(self.stock_mng_frame, self.stock_mng_header_btn, self.tr("stock_management"))
+        self._toggle_collapsible(sys_frame, self.sys_header_btn, "⚙️ Σύστημα")
+        self._toggle_collapsible(self.api_data_frame, self.api_data_header_btn, "🔌 Ενσωμάτωση Δεδομένων")
 
     def show_about_window(self):
         about_win = ctk.CTkToplevel(self)
@@ -352,13 +414,100 @@ class App(ctk.CTk):
             newsapi_rem = max(0, 100 - usage.get("newsapi", 0))
             self.cb_newsapi.configure(text=f"{self.tr('include_newsapi')}{newsapi_rem}/100)")
 
-    def toggle_sidebar(self):
+    def toggle_settings(self):
         if self.sidebar_frame.winfo_viewable():
+            if not (self.data_scroll_frame.winfo_viewable() or self.overview_scroll_frame.winfo_viewable()):
+                self.shake_button(self.toggle_settings_btn)
+                return
             self.sidebar_frame.grid_remove()
-            self.grid_columnconfigure(0, minsize=0)
+            self.content_frame.grid_columnconfigure(0, minsize=0, weight=0)
+            self.toggle_settings_btn.configure(fg_color=self.inactive_btn_color, text_color=self.inactive_text_color, border_color=self.inactive_btn_color)
         else:
             self.sidebar_frame.grid()
-            self.grid_columnconfigure(0, minsize=390)
+            self.content_frame.grid_columnconfigure(0, minsize=390, weight=0)
+            self.toggle_settings_btn.configure(fg_color=self.active_btn_color, text_color=self.active_text_color, border_color=self.active_border_color)
+
+    def toggle_data(self):
+        if self.data_scroll_frame.winfo_viewable():
+            if not (self.sidebar_frame.winfo_viewable() or self.overview_scroll_frame.winfo_viewable()):
+                self.shake_button(self.toggle_data_btn)
+                return
+            self.data_scroll_frame.grid_remove()
+            self.content_frame.grid_columnconfigure(1, minsize=0, weight=0)
+            self.toggle_data_btn.configure(fg_color=self.inactive_btn_color, text_color=self.inactive_text_color, border_color=self.inactive_btn_color)
+        else:
+            self.data_scroll_frame.grid()
+            self.content_frame.grid_columnconfigure(1, minsize=430, weight=1)
+            self.toggle_data_btn.configure(fg_color=self.active_btn_color, text_color=self.active_text_color, border_color=self.active_border_color)
+
+    def toggle_overview(self):
+        if self.overview_scroll_frame.winfo_viewable():
+            if not (self.sidebar_frame.winfo_viewable() or self.data_scroll_frame.winfo_viewable()):
+                self.shake_button(self.toggle_overview_btn)
+                return
+            self.overview_scroll_frame.grid_remove()
+            self.content_frame.grid_columnconfigure(2, weight=0)
+            self.toggle_overview_btn.configure(fg_color=self.inactive_btn_color, text_color=self.inactive_text_color, border_color=self.inactive_btn_color)
+        else:
+            self.overview_scroll_frame.grid()
+            self.content_frame.grid_columnconfigure(2, weight=3)
+            self.toggle_overview_btn.configure(fg_color=self.active_btn_color, text_color=self.active_text_color, border_color=self.active_border_color)
+
+    def shake_button(self, widget, distance=4, count=4, delay=35):
+        """Προσθέτει ένα οπτικό εφέ κουνήματος (shake) και κοκκινίσματος σε ένα κουμπί."""
+        # Εναλλαγή περιθωρίων ώστε να κουνιέται, αλλά το συνολικό άθροισμα (10) να παραμένει
+        # σταθερό για να μην επηρεάζονται τα διπλανά κουμπιά.
+        def move_left(c):
+            widget.pack_configure(padx=(5 - distance, 5 + distance))
+            self.after(delay, lambda: move_right(c))
+            
+        def move_right(c):
+            widget.pack_configure(padx=(5 + distance, 5 - distance))
+            if c > 0:
+                self.after(delay, lambda: move_left(c - 1))
+            else:
+                self.after(delay, lambda: widget.pack_configure(padx=5))
+        
+        # Στιγμιαία αλλαγή χρώματος σε κόκκινο προειδοποίησης
+        widget.configure(fg_color="#d9534f", text_color="white", border_color="#d9534f")
+        self.after(delay * count * 2, lambda: widget.configure(fg_color=self.active_btn_color, text_color=self.active_text_color, border_color=self.active_border_color))
+        
+        move_left(count)
+
+    def add_hover_border(self, widget, hover_color="#888888"):
+        """Προσθέτει ένα εφέ περιγράμματος όταν το ποντίκι περνάει πάνω από το κουμπί."""
+        original_color = widget.cget("fg_color")
+        widget.configure(border_width=1, border_color=original_color)
+        
+        def on_enter(e):
+            widget.configure(border_color=hover_color)
+            
+        def on_leave(e):
+            widget.configure(border_color=original_color)
+            
+        widget.bind("<Enter>", on_enter, add="+")
+        widget.bind("<Leave>", on_leave, add="+")
+
+    def _create_collapsible_header(self, parent_frame, title_text):
+        header_btn = ctk.CTkButton(
+            parent_frame,
+            text=f"▼  {title_text}",
+            font=ctk.CTkFont(size=15, weight="bold"),
+            fg_color="transparent",
+            text_color="white",
+            hover_color="#333333",
+            anchor="w",
+            command=lambda: self._toggle_collapsible(parent_frame, header_btn, title_text)
+        )
+        header_btn.grid(row=0, column=0, padx=5, pady=5, sticky="ew")
+        return header_btn
+
+    def _toggle_collapsible(self, parent_frame, header_btn, title_text):
+        is_open = "▼" in header_btn.cget("text")
+        for child in parent_frame.winfo_children():
+            if child != header_btn:
+                child.grid_remove() if is_open else child.grid()
+        header_btn.configure(text=f"▶  {title_text}" if is_open else f"▼  {title_text}")
 
     def paste_to_entry(self, entry_widget):
         try:
@@ -379,38 +528,52 @@ class App(ctk.CTk):
             pass
 
     def _build_data_pane(self, row, col):
-        pane = ctk.CTkFrame(self.left_scroll_frame)
-        pane.grid(row=row, column=col, padx=(20, 10), pady=10, sticky="nsew")
+        pane = ctk.CTkFrame(self.data_scroll_frame, fg_color="transparent")
+        pane.grid(row=row, column=col, padx=(15, 10), pady=10, sticky="nsew")
         
-        ctk.CTkLabel(pane, text=self.tr("data_title"), font=ctk.CTkFont(size=16, weight="bold")).pack(anchor="w", padx=15, pady=(15, 5))
+        # --- ΤΙΤΛΟΣ ΔΕΔΟΜΕΝΩΝ ---
+        data_title_lbl = ctk.CTkLabel(pane, text=self.tr("data_title"), font=ctk.CTkFont(size=18, weight="bold"))
+        data_title_lbl.pack(anchor="w", pady=(0, 10))
+
+        # 1. ΠΛΑΙΣΙΟ ΕΠΙΛΟΓΗΣ ΜΕΤΟΧΗΣ
+        stock_sel_frame = ctk.CTkFrame(pane, fg_color="#141414", corner_radius=8, border_width=1, border_color="#333333")
+        stock_sel_frame.pack(fill="x", pady=5)
+        stock_sel_frame.grid_columnconfigure(0, weight=1)
         
-        ctk.CTkLabel(pane, text=self.tr("select_stock"), font=ctk.CTkFont(size=12)).pack(anchor="w", padx=15)
-        
-        stock_ctrl_frame = ctk.CTkFrame(pane, fg_color="transparent")
-        stock_ctrl_frame.pack(fill="x", padx=15, pady=(0, 15))
+        ctk.CTkLabel(stock_sel_frame, text=self.tr("select_stock"), font=ctk.CTkFont(size=15, weight="bold"), anchor="w").grid(row=0, column=0, padx=10, pady=(10, 5), sticky="ew")
+
+        stock_ctrl_frame = ctk.CTkFrame(stock_sel_frame, fg_color="transparent")
+        stock_ctrl_frame.grid(row=1, column=0, sticky="ew", padx=10, pady=(0, 10))
         self.stock_var = ctk.StringVar(value=self.tr("choose_stock_default"))
         self.stock_menu = ctk.CTkOptionMenu(stock_ctrl_frame, variable=self.stock_var, values=[self.tr("choose_stock_default")], command=self.on_stock_select)
         self.stock_menu.pack(side="left", fill="x", expand=True)
         
-        ctk.CTkLabel(pane, text=self.tr("saved_urls_rss"), font=ctk.CTkFont(size=14, weight="bold")).pack(anchor="w", padx=15, pady=(10, 5))
-        self.urls_frame = ctk.CTkScrollableFrame(pane, height=150)
-        self.urls_frame.pack(fill="x", padx=15, pady=5)
+        # 2. ΠΛΑΙΣΙΟ URLS & RSS
+        urls_main_frame = ctk.CTkFrame(pane, fg_color="#141414", corner_radius=8, border_width=1, border_color="#333333")
+        urls_main_frame.pack(fill="x", pady=5)
+        urls_main_frame.grid_columnconfigure(0, weight=1)
+        
+        self._create_collapsible_header(urls_main_frame, self.tr("saved_urls_rss"))
+        
+        self.urls_frame = ctk.CTkScrollableFrame(urls_main_frame, height=150)
+        self.urls_frame.grid(row=1, column=0, sticky="ew", padx=10, pady=5)
         
         self.url_rows = []
         for url_item in self.user_data.get("urls", []):
             self.add_url_row(url_item.get("title", ""), url_item.get("url", ""), url_item.get("type", "URL"))
             
-        url_btns_frame = ctk.CTkFrame(pane, fg_color="transparent")
-        url_btns_frame.pack(anchor="w", padx=15, pady=2)
+        url_btns_frame = ctk.CTkFrame(urls_main_frame, fg_color="transparent")
+        url_btns_frame.grid(row=2, column=0, sticky="w", padx=10, pady=2)
         
         self.add_url_btn = ctk.CTkButton(url_btns_frame, text=self.tr("add_url"), width=120, command=lambda: self.add_url_row("", "", "URL"))
         self.add_url_btn.pack(side="left", padx=(0, 5))
         
         self.save_urls_btn = ctk.CTkButton(url_btns_frame, text=self.tr("save_urls"), width=140, fg_color="#2b2b2b", hover_color="#3b3b3b", command=self.save_urls)
         self.save_urls_btn.pack(side="left")
+        self.add_hover_border(self.save_urls_btn, "#6aa3cc")
             
-        self.rss_filters_frame = ctk.CTkFrame(pane, fg_color="transparent")
-        self.rss_filters_frame.pack(fill="x", padx=15, pady=(5, 10))
+        self.rss_filters_frame = ctk.CTkFrame(urls_main_frame, fg_color="transparent")
+        self.rss_filters_frame.grid(row=3, column=0, sticky="ew", padx=10, pady=(5, 10))
         
         ctk.CTkLabel(self.rss_filters_frame, text=self.tr("rss_filters"), font=ctk.CTkFont(size=11, weight="bold")).pack(side="left", padx=(0, 5))
         
@@ -424,28 +587,35 @@ class App(ctk.CTk):
         self.rss_apply_btn = ctk.CTkButton(self.rss_filters_frame, text=self.tr("rss_apply"), width=60, height=24, fg_color="#1f77b4", hover_color="#145c8f", command=self.apply_rss_filters)
         self.rss_apply_btn.pack(side="left", padx=(5, 0))
             
+        # 3. ΠΛΑΙΣΙΟ ΕΝΣΩΜΑΤΩΣΗΣ ΔΕΔΟΜΕΝΩΝ (APIs)
+        self.api_data_frame = ctk.CTkFrame(pane, fg_color="#141414", corner_radius=8, border_width=1, border_color="#333333")
+        self.api_data_frame.pack(fill="x", pady=5)
+        self.api_data_frame.grid_columnconfigure(0, weight=1)
+        
+        self.api_data_header_btn = self._create_collapsible_header(self.api_data_frame, "🔌 Ενσωμάτωση Δεδομένων")
+
         usage = self.user_data.get("api_usage", {})
         av_rem = max(0, 25 - usage.get("av", 0))
         fh_rem = max(0, 60 - usage.get("fh", 0))
         newsapi_rem = max(0, 100 - usage.get("newsapi", 0))
             
         self.av_var = ctk.IntVar(value=0)
-        self.cb_av = ctk.CTkCheckBox(pane, text=f"{self.tr('include_av')}{av_rem}/25)", variable=self.av_var, command=self.on_av_toggle)
-        self.cb_av.pack(anchor="w", padx=15, pady=8)
+        self.cb_av = ctk.CTkCheckBox(self.api_data_frame, text=f"{self.tr('include_av')}{av_rem}/25)", variable=self.av_var, command=self.on_av_toggle)
+        self.cb_av.grid(row=1, column=0, sticky="w", padx=10, pady=8)
         ToolTip(self.cb_av, self.tr("tt_cb_av"))
         
         self.fh_var = ctk.IntVar(value=0)
-        self.cb_fh = ctk.CTkCheckBox(pane, text=f"{self.tr('include_fh')}{fh_rem}/60)", variable=self.fh_var, command=self.on_fh_toggle)
-        self.cb_fh.pack(anchor="w", padx=15, pady=8)
+        self.cb_fh = ctk.CTkCheckBox(self.api_data_frame, text=f"{self.tr('include_fh')}{fh_rem}/60)", variable=self.fh_var, command=self.on_fh_toggle)
+        self.cb_fh.grid(row=2, column=0, sticky="w", padx=10, pady=8)
         ToolTip(self.cb_fh, self.tr("tt_cb_fh"))
 
         self.newsapi_var = ctk.IntVar(value=0)
-        self.cb_newsapi = ctk.CTkCheckBox(pane, text=f"{self.tr('include_newsapi')}{newsapi_rem}/100)", variable=self.newsapi_var, command=self.on_newsapi_toggle)
-        self.cb_newsapi.pack(anchor="w", padx=15, pady=(8, 2))
+        self.cb_newsapi = ctk.CTkCheckBox(self.api_data_frame, text=f"{self.tr('include_newsapi')}{newsapi_rem}/100)", variable=self.newsapi_var, command=self.on_newsapi_toggle)
+        self.cb_newsapi.grid(row=3, column=0, sticky="w", padx=10, pady=(8, 2))
         ToolTip(self.cb_newsapi, self.tr("tt_cb_newsapi"))
         
-        self.newsapi_filters_frame = ctk.CTkFrame(pane, fg_color="transparent")
-        self.newsapi_filters_frame.pack(fill="x", padx=35, pady=(0, 8))
+        self.newsapi_filters_frame = ctk.CTkFrame(self.api_data_frame, fg_color="transparent")
+        self.newsapi_filters_frame.grid(row=4, column=0, sticky="ew", padx=30, pady=(0, 8))
         self.newsapi_q_entry = ctk.CTkEntry(self.newsapi_filters_frame, placeholder_text=self.tr("newsapi_ph_q"), width=100, height=24, font=ctk.CTkFont(size=11))
         self.newsapi_q_entry.pack(side="left", padx=(0, 5))
         self.newsapi_lang_entry = ctk.CTkEntry(self.newsapi_filters_frame, placeholder_text=self.tr("newsapi_ph_lang"), width=70, height=24, font=ctk.CTkFont(size=11))
@@ -456,27 +626,42 @@ class App(ctk.CTk):
         ToolTip(self.newsapi_lang_entry, self.tr("tt_newsapi_lang"))
         ToolTip(self.newsapi_date_entry, self.tr("tt_newsapi_date"))
 
-        self.cb_news = ctk.CTkCheckBox(pane, text=self.tr("include_news"))
-        self.cb_news.pack(anchor="w", padx=15, pady=8)
+        self.cb_news = ctk.CTkCheckBox(self.api_data_frame, text=self.tr("include_news"))
+        self.cb_news.grid(row=5, column=0, sticky="w", padx=10, pady=(8, 10))
         ToolTip(self.cb_news, self.tr("tt_cb_news"))
         
-        ctk.CTkLabel(pane, text=self.tr("analysis_format"), font=ctk.CTkFont(size=12, weight="bold")).pack(anchor="w", padx=15, pady=(15, 0))
-        self.format_var = ctk.StringVar(value="Αναλυτικά")
-        ctk.CTkRadioButton(pane, text=self.tr("format_detailed"), variable=self.format_var, value="Αναλυτικά").pack(anchor="w", padx=20, pady=5)
-        ctk.CTkRadioButton(pane, text=self.tr("format_summary"), variable=self.format_var, value="Συνοπτικά").pack(anchor="w", padx=20, pady=5)
+        # 4. ΠΛΑΙΣΙΟ ΜΟΡΦΗΣ ΑΝΑΛΥΣΗΣ
+        format_frame = ctk.CTkFrame(pane, fg_color="#141414", corner_radius=8, border_width=1, border_color="#333333")
+        format_frame.pack(fill="x", pady=5)
+        format_frame.grid_columnconfigure(0, weight=1)
         
-        prompt_header_frame = ctk.CTkFrame(pane, fg_color="transparent")
-        prompt_header_frame.pack(fill="x", padx=15, pady=(15, 2))
-        ctk.CTkLabel(prompt_header_frame, text=self.tr("extra_prompt"), font=ctk.CTkFont(size=12, weight="bold")).pack(side="left")
+        self._create_collapsible_header(format_frame, self.tr("analysis_format"))
+        
+        inner_format_frame = ctk.CTkFrame(format_frame, fg_color="transparent")
+        inner_format_frame.grid(row=1, column=0, sticky="ew", padx=10, pady=(0, 10))
+        
+        self.format_var = ctk.StringVar(value="Αναλυτικά")
+        ctk.CTkRadioButton(inner_format_frame, text=self.tr("format_detailed"), variable=self.format_var, value="Αναλυτικά").pack(anchor="w", padx=10, pady=5)
+        ctk.CTkRadioButton(inner_format_frame, text=self.tr("format_summary"), variable=self.format_var, value="Συνοπτικά").pack(anchor="w", padx=10, pady=5)
+        
+        # 5. ΠΛΑΙΣΙΟ ΕΠΙΠΛΕΟΝ ΟΔΗΓΙΩΝ & ΑΡΧΕΙΩΝ
+        extra_frame = ctk.CTkFrame(pane, fg_color="#141414", corner_radius=8, border_width=1, border_color="#333333")
+        extra_frame.pack(fill="x", pady=5)
+        extra_frame.grid_columnconfigure(0, weight=1)
+        
+        self._create_collapsible_header(extra_frame, self.tr("extra_prompt"))
+        
+        prompt_header_frame = ctk.CTkFrame(extra_frame, fg_color="transparent")
+        prompt_header_frame.grid(row=1, column=0, sticky="ew", padx=10, pady=(5, 2))
         ctk.CTkButton(prompt_header_frame, text=self.tr("paste"), width=80, height=24, fg_color="#444", hover_color="#555", command=lambda: self.paste_to_textbox(self.extra_prompt_box)).pack(side="right")
         
-        self.extra_prompt_box = ctk.CTkTextbox(pane, height=120, font=ctk.CTkFont(size=12))
-        self.extra_prompt_box.pack(fill="x", padx=15, pady=(0, 15))
+        self.extra_prompt_box = ctk.CTkTextbox(extra_frame, height=80, font=ctk.CTkFont(size=12))
+        self.extra_prompt_box.grid(row=2, column=0, sticky="ew", padx=10, pady=(0, 10))
         ToolTip(self.extra_prompt_box, self.tr("tt_extra_prompt"))
 
         self.attached_files = []
-        self.files_frame = ctk.CTkFrame(pane, fg_color="transparent")
-        self.files_frame.pack(fill="x", padx=15, pady=(0, 15))
+        self.files_frame = ctk.CTkFrame(extra_frame, fg_color="transparent")
+        self.files_frame.grid(row=3, column=0, sticky="ew", padx=10, pady=(0, 10))
         
         attach_btn = ctk.CTkButton(self.files_frame, text=self.tr("add_file"), width=150, height=24, fg_color="#1f77b4", hover_color="#145c8f", command=self.attach_file)
         attach_btn.pack(side="left")
@@ -486,14 +671,17 @@ class App(ctk.CTk):
         self.files_list_label = ctk.CTkLabel(self.files_frame, text="", text_color="gray", font=ctk.CTkFont(size=11), wraplength=180)
         self.files_list_label.pack(side="left", padx=10)
 
-        articles_header = ctk.CTkFrame(pane, fg_color="transparent")
-        articles_header.pack(fill="x", padx=15, pady=(5, 2))
-        ctk.CTkLabel(articles_header, text=self.tr("paste_articles"), font=ctk.CTkFont(size=12, weight="bold")).pack(side="left")
+        # 6. ΠΛΑΙΣΙΟ ΕΠΙΚΟΛΛΗΣΗΣ ΑΡΘΡΩΝ
+        articles_frame = ctk.CTkFrame(pane, fg_color="#141414", corner_radius=8, border_width=1, border_color="#333333")
+        articles_frame.pack(fill="x", pady=5)
+        articles_frame.grid_columnconfigure(0, weight=1)
+        
+        self._create_collapsible_header(articles_frame, self.tr("paste_articles"))
 
         self.article_boxes = []
         for i in range(3):
-            art_frame = ctk.CTkFrame(pane, fg_color="transparent")
-            art_frame.pack(fill="x", padx=15, pady=2)
+            art_frame = ctk.CTkFrame(articles_frame, fg_color="transparent")
+            art_frame.grid(row=i+1, column=0, sticky="ew", padx=10, pady=2)
             lbl_btn_frame = ctk.CTkFrame(art_frame, fg_color="transparent")
             lbl_btn_frame.pack(fill="x")
             ctk.CTkLabel(lbl_btn_frame, text=f"{self.tr('article_num')}{i+1}:", font=ctk.CTkFont(size=11)).pack(side="left")
@@ -503,11 +691,32 @@ class App(ctk.CTk):
             box.pack(fill="x", pady=(2, 5))
             self.article_boxes.append(box)
 
-        self.analyze_btn = ctk.CTkButton(pane, text=self.tr("start_analysis"), font=ctk.CTkFont(weight="bold"), fg_color="#d9534f", hover_color="#c9302c", command=self.fetch_data, height=40)
-        self.analyze_btn.pack(fill="x", padx=15, pady=20)
+        # 7. ΕΝΑΡΞΗ ΑΝΑΛΥΣΗΣ & ΚΑΤΑΣΤΑΣΗ
+        action_frame = ctk.CTkFrame(pane, fg_color="#141414", corner_radius=8, border_width=1, border_color="#333333")
+        action_frame.pack(fill="x", pady=5)
+        action_frame.grid_columnconfigure(0, weight=1)
+
+        ctk.CTkLabel(action_frame, text=self.tr("start_analysis"), font=ctk.CTkFont(size=15, weight="bold"), anchor="w").grid(row=0, column=0, padx=10, pady=(10, 5), sticky="ew")
+
+        inner_action_frame = ctk.CTkFrame(action_frame, fg_color="transparent")
+        inner_action_frame.grid(row=1, column=0, sticky="ew", padx=10, pady=(5, 10))
+
+        self.analyze_btn = ctk.CTkButton(inner_action_frame, text=self.tr("start_analysis"), font=ctk.CTkFont(weight="bold"), fg_color="#d9534f", hover_color="#c9302c", command=self.fetch_data, height=40)
+        self.analyze_btn.pack(fill="x", pady=(0, 10))
+        self.add_hover_border(self.analyze_btn, "#ff9999")
         
-        self.status_main = ctk.CTkLabel(pane, text="", text_color="orange")
-        self.status_main.pack(pady=(0, 10))
+        self.status_main = ctk.CTkLabel(inner_action_frame, text="", text_color="orange")
+        self.status_main.pack()
+
+        # 8. ΙΣΤΟΡΙΚΟ (Collapse)
+        hist_container = ctk.CTkFrame(pane, fg_color="#141414", corner_radius=8, border_width=1, border_color="#333333")
+        hist_container.pack(fill="x", pady=5)
+        hist_container.grid_columnconfigure(0, weight=1)
+        
+        self._create_collapsible_header(hist_container, self.tr("history_title"))
+        
+        self.hist_frame = ctk.CTkFrame(hist_container, fg_color="transparent")
+        self.hist_frame.grid(row=1, column=0, sticky="ew", pady=(5, 10))
 
     def attach_file(self):
         file_paths = filedialog.askopenfilenames(
@@ -614,7 +823,7 @@ class App(ctk.CTk):
             self.status_main.configure(text="✅ Τα URLs αποθηκεύτηκαν!", text_color="green")
 
     def _build_overview_pane(self, row, col):
-        pane = ctk.CTkFrame(self.right_scroll_frame, fg_color="transparent")
+        pane = ctk.CTkFrame(self.overview_scroll_frame, fg_color="transparent")
         pane.grid(row=row, column=col, padx=10, pady=10, sticky="nsew")
         
         title_logo_frame = ctk.CTkFrame(pane, fg_color="transparent")
@@ -631,22 +840,32 @@ class App(ctk.CTk):
         self.website_cb = ctk.CTkCheckBox(title_logo_frame, text=self.tr("include_website"), variable=self.website_var, font=ctk.CTkFont(size=11), width=20)
         ToolTip(self.website_cb, self.tr("tt_website_cb"))
         
-        time_frame = ctk.CTkFrame(pane, fg_color="transparent")
-        time_frame.pack(fill="x", pady=5)
+        prices_container = ctk.CTkFrame(pane, fg_color="#141414", corner_radius=8, border_width=1, border_color="#333333")
+        prices_container.pack(fill="x", pady=5)
+        prices_container.grid_columnconfigure(0, weight=1)
+        self._create_collapsible_header(prices_container, "Τιμές & Χρονικό Διάστημα")
+
+        time_frame = ctk.CTkFrame(prices_container, fg_color="transparent")
+        time_frame.grid(row=1, column=0, sticky="ew", padx=10, pady=5)
         ctk.CTkLabel(time_frame, text=self.tr("chart_timeframe"), font=ctk.CTkFont(size=12)).pack(side="left")
         self.time_var = ctk.StringVar(value="6mo")
         self.time_menu = ctk.CTkOptionMenu(time_frame, variable=self.time_var, values=["1mo", "3mo", "6mo", "1y", "5y"], command=self.on_time_period_change)
         self.time_menu.pack(side="left", padx=10)
         
-        prices_frame = ctk.CTkFrame(pane, fg_color="transparent")
-        prices_frame.pack(fill="x", pady=5)
+        prices_frame = ctk.CTkFrame(prices_container, fg_color="transparent")
+        prices_frame.grid(row=2, column=0, sticky="ew", padx=10, pady=5)
         prices_frame.grid_columnconfigure((0,1,2), weight=1)
         self.l_yahoo = self.create_metric(prices_frame, "Yahoo Finance ⏱", "---", 0, 0, self.tr("tt_yahoo_price"))
         self.l_ft = self.create_metric(prices_frame, "Financial Times ⏱", "---", 0, 1, self.tr("tt_ft_price"))
         self.l_inv = self.create_metric(prices_frame, "Investing.com ⏱", "---", 0, 2, self.tr("tt_inv_price"))
         
-        self.overview_tabs = ctk.CTkTabview(pane, height=650)
-        self.overview_tabs.pack(fill="x", pady=2)
+        tabs_container = ctk.CTkFrame(pane, fg_color="#141414", corner_radius=8, border_width=1, border_color="#333333")
+        tabs_container.pack(fill="x", pady=5)
+        tabs_container.grid_columnconfigure(0, weight=1)
+        self._create_collapsible_header(tabs_container, "Διαγράμματα & Πηγές")
+
+        self.overview_tabs = ctk.CTkTabview(tabs_container, height=650)
+        self.overview_tabs.grid(row=1, column=0, sticky="nsew", padx=10, pady=5)
         
         self.tab_chart_name = self.tr("tab_chart")
         self.tab_news_name = self.tr("tab_news")
@@ -693,24 +912,33 @@ class App(ctk.CTk):
         self.rss_frame.pack(fill="both", expand=True, padx=5, pady=5)
         ctk.CTkLabel(self.rss_frame, text=self.tr("rss_empty_msg"), text_color="gray").pack(pady=20)
         
-        ctk.CTkLabel(pane, text=self.tr("stats_title"), font=ctk.CTkFont(size=13, weight="bold")).pack(anchor="w", pady=(10, 2))
-        self.stats_frame = ctk.CTkFrame(pane, fg_color="transparent")
-        self.stats_frame.pack(fill="x", pady=2)
+        self.stats_container = ctk.CTkFrame(pane, fg_color="#141414", corner_radius=8, border_width=1, border_color="#333333")
+        self.stats_container.pack(fill="x", pady=5)
+        self.stats_container.grid_columnconfigure(0, weight=1)
+        self._create_collapsible_header(self.stats_container, self.tr("stats_title"))
+        
+        self.stats_frame = ctk.CTkFrame(self.stats_container, fg_color="transparent")
+        self.stats_frame.grid(row=1, column=0, sticky="ew", padx=10, pady=5)
         self.stats_frame.grid_columnconfigure((0,1,2,3), weight=1)
         self.l_mcap = self.create_metric(self.stats_frame, "Market Cap", "---", 0, 0, self.tr("tt_mcap"))
         self.l_pe = self.create_metric(self.stats_frame, "P/E Ratio", "---", 0, 1, self.tr("tt_pe"))
         self.l_div = self.create_metric(self.stats_frame, "Div Yield", "---", 0, 2, self.tr("tt_div"))
         self.l_beta = self.create_metric(self.stats_frame, "Beta", "---", 0, 3, self.tr("tt_beta"))
 
-        self.notes_frame = ctk.CTkFrame(pane, fg_color="#242424", corner_radius=5)
-        ctk.CTkLabel(self.notes_frame, text=self.tr("stock_notes"), font=ctk.CTkFont(size=13, weight="bold")).pack(anchor="w", padx=10, pady=(5,2))
+        self.notes_frame = ctk.CTkFrame(pane, fg_color="#141414", corner_radius=8, border_width=1, border_color="#333333")
+        self.notes_frame.grid_columnconfigure(0, weight=1)
+        self._create_collapsible_header(self.notes_frame, self.tr("stock_notes"))
         self.notes_display_box = ctk.CTkTextbox(self.notes_frame, wrap="word", font=ctk.CTkFont(size=12), fg_color="transparent", height=60)
-        self.notes_display_box.pack(fill="x", expand=True, padx=10, pady=(0,5))
+        self.notes_display_box.grid(row=1, column=0, sticky="ew", padx=10, pady=(0, 10))
         self.notes_display_box.configure(state="disabled")
         
-        ctk.CTkLabel(pane, text=self.tr("health_title"), font=ctk.CTkFont(size=13, weight="bold")).pack(anchor="w", pady=(10, 2))
-        health_frame = ctk.CTkFrame(pane, fg_color="transparent")
-        health_frame.pack(fill="x", pady=2)
+        health_container = ctk.CTkFrame(pane, fg_color="#141414", corner_radius=8, border_width=1, border_color="#333333")
+        health_container.pack(fill="x", pady=5)
+        health_container.grid_columnconfigure(0, weight=1)
+        self._create_collapsible_header(health_container, self.tr("health_title"))
+        
+        health_frame = ctk.CTkFrame(health_container, fg_color="transparent")
+        health_frame.grid(row=1, column=0, sticky="ew", padx=10, pady=5)
         health_frame.grid_columnconfigure((0,1,2,3), weight=1)
         self.l_rev_growth = self.create_metric(health_frame, "Rev Growth", "---", 0, 0, self.tr("tt_rev_growth"))
         self.l_roe = self.create_metric(health_frame, "ROE", "---", 0, 1, self.tr("tt_roe"))
@@ -718,58 +946,64 @@ class App(ctk.CTk):
         self.l_dte = self.create_metric(health_frame, "Debt/Eq", "---", 0, 3, self.tr("tt_dte"))
         self.l_fcf = self.create_metric(health_frame, "Free Cash Flow", "---", 1, 0, self.tr("tt_fcf"))
         
-        ctk.CTkLabel(pane, text=self.tr("tech_title"), font=ctk.CTkFont(size=13, weight="bold")).pack(anchor="w", pady=(10, 2))
-        tech_frame = ctk.CTkFrame(pane, fg_color="transparent")
-        tech_frame.pack(fill="x", pady=2)
+        tech_container = ctk.CTkFrame(pane, fg_color="#141414", corner_radius=8, border_width=1, border_color="#333333")
+        tech_container.pack(fill="x", pady=5)
+        tech_container.grid_columnconfigure(0, weight=1)
+        self._create_collapsible_header(tech_container, self.tr("tech_title"))
+        
+        tech_frame = ctk.CTkFrame(tech_container, fg_color="transparent")
+        tech_frame.grid(row=1, column=0, sticky="ew", padx=10, pady=5)
         tech_frame.grid_columnconfigure((0,1,2,3), weight=1)
         self.l_rsi = self.create_metric(tech_frame, "RSI (14)", "---", 0, 0, self.tr("tt_rsi"))
         self.l_macd = self.create_metric(tech_frame, "MACD", "---", 0, 1, self.tr("tt_macd"))
         self.l_sma20 = self.create_metric(tech_frame, "SMA 20", "---", 0, 2, self.tr("tt_sma20"))
         self.l_sma50 = self.create_metric(tech_frame, "SMA 50", "---", 0, 3, self.tr("tt_sma50"))
 
-        self.av_title_label = ctk.CTkLabel(pane, text=self.tr("av_title"), font=ctk.CTkFont(size=13, weight="bold"))
-        self.av_frame = ctk.CTkFrame(pane, fg_color="transparent")
+        self.av_container = ctk.CTkFrame(pane, fg_color="#141414", corner_radius=8, border_width=1, border_color="#333333")
+        self.av_container.grid_columnconfigure(0, weight=1)
+        self._create_collapsible_header(self.av_container, self.tr("av_title"))
+        
+        self.av_frame = ctk.CTkFrame(self.av_container, fg_color="transparent")
+        self.av_frame.grid(row=1, column=0, sticky="ew", padx=10, pady=5)
         self.av_frame.grid_columnconfigure((0,1,2), weight=1)
         self.l_av_pe = self.create_metric(self.av_frame, "PE Ratio (AV)", "---", 0, 0, self.tr("tt_av_pe"))
         self.l_av_div = self.create_metric(self.av_frame, "Div Yield (AV)", "---", 0, 1, self.tr("tt_av_div"))
         self.l_av_eps = self.create_metric(self.av_frame, "EPS (AV)", "---", 0, 2, self.tr("tt_av_eps"))
 
-        self.fh_title_label = ctk.CTkLabel(pane, text=self.tr("fh_title"), font=ctk.CTkFont(size=13, weight="bold"))
-        self.fh_frame = ctk.CTkFrame(pane, fg_color="transparent")
+        self.fh_container = ctk.CTkFrame(pane, fg_color="#141414", corner_radius=8, border_width=1, border_color="#333333")
+        self.fh_container.grid_columnconfigure(0, weight=1)
+        self._create_collapsible_header(self.fh_container, self.tr("fh_title"))
+        
+        self.fh_frame = ctk.CTkFrame(self.fh_container, fg_color="transparent")
+        self.fh_frame.grid(row=1, column=0, sticky="ew", padx=10, pady=5)
         self.fh_frame.grid_columnconfigure((0,1,2,3), weight=1)
         self.l_fh_cur = self.create_metric(self.fh_frame, self.tr("fh_lbl_cur"), "---", 0, 0, self.tr("tt_fh_cur"))
         self.l_fh_open = self.create_metric(self.fh_frame, self.tr("fh_lbl_open"), "---", 0, 1, self.tr("tt_fh_open"))
         self.l_fh_high = self.create_metric(self.fh_frame, self.tr("fh_lbl_high"), "---", 0, 2, self.tr("tt_fh_high"))
         self.l_fh_low = self.create_metric(self.fh_frame, self.tr("fh_lbl_low"), "---", 0, 3, self.tr("tt_fh_low"))
 
-        self.ai_analysis_title_label = ctk.CTkLabel(pane, text=self.tr("ai_analysis_title"), font=ctk.CTkFont(size=13, weight="bold"))
-        self.ai_analysis_title_label.pack(anchor="w", pady=(15, 2))
-        self.result_textbox = ctk.CTkTextbox(pane, wrap="word", font=ctk.CTkFont(size=14), height=300)
-        self.result_textbox.pack(fill="x", expand=False, pady=5)
+        self.ai_container = ctk.CTkFrame(pane, fg_color="#141414", corner_radius=8, border_width=1, border_color="#333333")
+        self.ai_container.pack(fill="x", pady=5)
+        self.ai_container.grid_columnconfigure(0, weight=1)
+        self._create_collapsible_header(self.ai_container, self.tr("ai_analysis_title"))
         
-        actions_frame = ctk.CTkFrame(pane, fg_color="transparent")
-        actions_frame.pack(anchor="e", pady=5)
+        self.result_textbox = ctk.CTkTextbox(self.ai_container, wrap="word", font=ctk.CTkFont(size=14), height=300)
+        self.result_textbox.grid(row=1, column=0, sticky="ew", padx=10, pady=5)
+        
+        actions_frame = ctk.CTkFrame(self.ai_container, fg_color="transparent")
+        actions_frame.grid(row=2, column=0, sticky="e", padx=10, pady=(0, 10))
         
         print_btn = ctk.CTkButton(actions_frame, text=self.tr("print"), fg_color="#1f77b4", hover_color="#145c8f", command=self.print_analysis)
         print_btn.pack(side="left", padx=(0, 10))
+        self.add_hover_border(print_btn, "#99c2ff")
         
         export_btn = ctk.CTkButton(actions_frame, text=self.tr("export_word"), fg_color="#28a745", hover_color="#218838", command=self.export_to_word)
         export_btn.pack(side="left")
+        self.add_hover_border(export_btn, "#99e699")
 
     def redraw_current_chart(self):
         if hasattr(self, 'current_df') and self.current_df is not None:
             self.draw_chart(self.current_df)
-
-    def _build_history_pane(self, row, col):
-        pane = ctk.CTkFrame(self.left_scroll_frame, fg_color="transparent")
-        pane.grid(row=row, column=col, padx=(20, 10), pady=(10, 40), sticky="nsew")
-        
-        ctk.CTkLabel(pane, text=self.tr("history_title"), font=ctk.CTkFont(size=16, weight="bold")).pack(anchor="w", pady=(0, 10))
-        
-        self.hist_frame = ctk.CTkFrame(pane)
-        self.hist_frame.pack(fill="x")
-        
-        self.update_history_ui()
 
     def update_history_ui(self):
         for widget in self.hist_frame.winfo_children():
@@ -859,12 +1093,10 @@ class App(ctk.CTk):
 
     def on_av_toggle(self):
         if self.av_var.get() == 1:
-            self.av_title_label.pack(anchor="w", pady=(10, 2), before=self.ai_analysis_title_label)
-            self.av_frame.pack(fill="x", pady=2, before=self.ai_analysis_title_label)
+            self.av_container.pack(fill="x", pady=5, before=self.ai_container)
             self._trigger_av_fetch()
         else:
-            self.av_title_label.pack_forget()
-            self.av_frame.pack_forget()
+            self.av_container.pack_forget()
             self.l_av_pe.configure(text="---")
             self.l_av_div.configure(text="---")
             self.l_av_eps.configure(text="---")
@@ -872,12 +1104,10 @@ class App(ctk.CTk):
 
     def on_fh_toggle(self):
         if self.fh_var.get() == 1:
-            self.fh_title_label.pack(anchor="w", pady=(10, 2), before=self.ai_analysis_title_label)
-            self.fh_frame.pack(fill="x", pady=2, before=self.ai_analysis_title_label)
+            self.fh_container.pack(fill="x", pady=5, before=self.ai_container)
             self._trigger_fh_fetch()
         else:
-            self.fh_title_label.pack_forget()
-            self.fh_frame.pack_forget()
+            self.fh_container.pack_forget()
             self.l_fh_cur.configure(text="---")
             self.l_fh_open.configure(text="---")
             self.l_fh_high.configure(text="---")
@@ -1266,7 +1496,7 @@ class App(ctk.CTk):
         notes_text = current_stock_data.get("Notes", "") if current_stock_data else ""
 
         if notes_text:
-            self.notes_frame.pack(fill="x", pady=(10, 5), after=self.stats_frame)
+            self.notes_frame.pack(fill="x", pady=5, after=self.stats_container)
             self.notes_display_box.configure(state="normal")
             self.notes_display_box.delete("1.0", "end")
             self.notes_display_box.insert("1.0", notes_text)
@@ -1960,6 +2190,10 @@ class App(ctk.CTk):
         watchlist = self.user_data.get("watchlist", [])
         if index < len(watchlist):
             item = watchlist[index]
+           
+            if hasattr(self, 'stock_mng_header_btn') and "▶" in self.stock_mng_header_btn.cget("text"):
+                self._toggle_collapsible(self.stock_mng_frame, self.stock_mng_header_btn, self.tr("stock_management"))
+                
             self.stock_name_entry.delete(0, 'end')
             self.stock_name_entry.insert(0, item.get("Ονομασία", ""))
             self.stock_yahoo_entry.delete(0, 'end')
@@ -2106,16 +2340,22 @@ class App(ctk.CTk):
 
         for idx, item in enumerate(self.user_data.get("watchlist", [])):
             name = item.get("Ονομασία", "N/A")
+            bg_color = "transparent" if idx % 2 == 0 else "#2b2b2b"
             
             # Αφού τώρα υπάρχει χώρος, επιτρέπουμε μεγαλύτερα ονόματα
             display_name = name if len(name) <= 22 else name[:20] + ".."
-            lbl_name = ctk.CTkLabel(self.watchlist_frame, text=display_name, font=ctk.CTkFont(size=12), anchor="w")
-            lbl_name.grid(row=idx+1, column=0, padx=2, pady=2, sticky="we")
+            
+            row_frame = ctk.CTkFrame(self.watchlist_frame, fg_color=bg_color, corner_radius=4)
+            row_frame.grid(row=idx+1, column=0, columnspan=4, sticky="ew", pady=1)
+            row_frame.grid_columnconfigure(0, weight=1)
+            
+            lbl_name = ctk.CTkLabel(row_frame, text=display_name, font=ctk.CTkFont(size=12), anchor="w")
+            lbl_name.grid(row=0, column=0, padx=4, pady=2, sticky="we")
             lbl_name.bind("<Double-Button-1>", lambda e, n=name: self._select_and_fetch(n))
             ToolTip(lbl_name, name)
 
-            order_frame = ctk.CTkFrame(self.watchlist_frame, fg_color="transparent")
-            order_frame.grid(row=idx+1, column=1, padx=2, pady=2, sticky="e")
+            order_frame = ctk.CTkFrame(row_frame, fg_color="transparent")
+            order_frame.grid(row=0, column=1, padx=2, pady=2, sticky="e")
             
             up_btn = ctk.CTkButton(order_frame, text="▲", width=20, height=20, fg_color="#444", hover_color="#555", command=lambda i=idx: self.move_stock_up(i))
             up_btn.pack(side="left", padx=1)
@@ -2125,11 +2365,11 @@ class App(ctk.CTk):
             down_btn.pack(side="left", padx=1)
             if idx == len(self.user_data.get("watchlist", [])) - 1: down_btn.configure(state="disabled")
 
-            edit_btn = ctk.CTkButton(self.watchlist_frame, text="✏️", width=25, height=20, fg_color="#f0ad4e", text_color="black", hover_color="#ec971f", command=lambda i=idx: self.edit_stock(i))
-            edit_btn.grid(row=idx+1, column=2, padx=2, pady=2, sticky="e")
+            edit_btn = ctk.CTkButton(row_frame, text="✏️", width=25, height=20, fg_color="#f0ad4e", text_color="black", hover_color="#ec971f", command=lambda i=idx: self.edit_stock(i))
+            edit_btn.grid(row=0, column=2, padx=2, pady=2, sticky="e")
 
-            del_btn = ctk.CTkButton(self.watchlist_frame, text="❌", width=25, height=20, fg_color="#d9534f", hover_color="#c9302c", command=lambda s=name: self.delete_stock(s))
-            del_btn.grid(row=idx+1, column=3, padx=2, pady=2, sticky="e")
+            del_btn = ctk.CTkButton(row_frame, text="❌", width=25, height=20, fg_color="#d9534f", hover_color="#c9302c", command=lambda s=name: self.delete_stock(s))
+            del_btn.grid(row=0, column=3, padx=2, pady=2, sticky="e")
 
     def update_models(self, selected_provider=None):
         provider = selected_provider or self.ai_provider_menu.get()

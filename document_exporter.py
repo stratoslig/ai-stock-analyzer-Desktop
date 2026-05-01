@@ -207,7 +207,22 @@ def save_to_pdf(text, stock_name, file_path, chart_image=None, prices=None, stat
         if not success:
             return False, f"Σφάλμα δημιουργίας προσωρινού εγγράφου: {error}"
             
-        convert(temp_docx, file_path)
+        # Αντιμετώπιση του σφάλματος 'tqdm' της docx2pdf όταν δεν υπάρχει ανοιχτή κονσόλα (GUI mode)
+        import sys
+        from io import StringIO
+        original_stdout = sys.stdout
+        original_stderr = sys.stderr
+        if sys.stdout is None:
+            sys.stdout = StringIO()
+        if sys.stderr is None:
+            sys.stderr = StringIO()
+            
+        try:
+            convert(temp_docx, file_path)
+        finally:
+            sys.stdout = original_stdout
+            sys.stderr = original_stderr
+            
         return True, None
     except Exception as e:
         logger.error(f"Σφάλμα κατά την εξαγωγή PDF: {e}", exc_info=True)

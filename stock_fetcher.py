@@ -76,9 +76,15 @@ def get_stock_data(symbol, period="6mo"):
             total_debt, ebitda = info.get("totalDebt"), info.get("ebitda")
             debt_ebitda = (total_debt / ebitda) if isinstance(total_debt, (int, float)) and isinstance(ebitda, (int, float)) and ebitda != 0 else "N/A"
 
-            fmt_rev_growth = f"{rev_growth * 100:.2f}%" if isinstance(rev_growth, (int, float)) else "N/A"
-            fmt_roe = f"{roe * 100:.2f}%" if isinstance(roe, (int, float)) else "N/A"
-            fmt_op_margin = f"{op_margin * 100:.2f}%" if isinstance(op_margin, (int, float)) else "N/A"
+            # Έξυπνη μετατροπή ποσοστών: Αν η απόλυτη τιμή είναι εξωπραγματική (>10 δηλ. >1000%), 
+            # θεωρούμε ότι το API την επέστρεψε ήδη μορφοποιημένη ως ποσοστό (π.χ. 15.7 αντί για 0.157)
+            def safe_pct(val, threshold=10):
+                if not isinstance(val, (int, float)): return "N/A"
+                return f"{val:.2f}%" if abs(val) > threshold else f"{val * 100:.2f}%"
+
+            fmt_rev_growth = safe_pct(rev_growth)
+            fmt_roe = safe_pct(roe)
+            fmt_op_margin = safe_pct(op_margin)
             fmt_dte = f"{dte:.2f}" if isinstance(dte, (int, float)) else "N/A"
             fmt_fwd_pe = f"{forward_pe:.2f}" if isinstance(forward_pe, (int, float)) else "N/A"
             fmt_ev_ebitda = f"{ev_ebitda:.2f}" if isinstance(ev_ebitda, (int, float)) else "N/A"
@@ -86,10 +92,15 @@ def get_stock_data(symbol, period="6mo"):
             fmt_debt_ebitda = f"{debt_ebitda:.2f}" if isinstance(debt_ebitda, (int, float)) else "N/A"
             fmt_fcf = f"${fcf/1e9:.2f}B" if isinstance(fcf, (int, float)) and abs(fcf) >= 1e9 else (f"${fcf/1e6:.2f}M" if isinstance(fcf, (int, float)) else "N/A")
 
+            if isinstance(div, (int, float)):
+                fmt_div = f"{div:.2f}%" if div > 1 else f"{div * 100:.2f}%"
+            else:
+                fmt_div = "N/A"
+
             res.update({
                 "mcap": f"${mcap/1e9:.2f}B" if mcap >= 1e9 else f"${mcap/1e6:.2f}M",
                 "pe": f"{pe:.2f}" if isinstance(pe, (int, float)) else "N/A",
-                "div": (f"{div * 100:.2f}%") if isinstance(div, (int, float)) else "N/A",
+                "div": fmt_div,
                 "beta": f"{beta:.2f}" if isinstance(beta, (int, float)) else "N/A",
                 "rev_growth": fmt_rev_growth, "roe": fmt_roe, "op_margin": fmt_op_margin, "dte": fmt_dte, "fcf": fmt_fcf,
                 "forward_pe": fmt_fwd_pe, "ev_ebitda": fmt_ev_ebitda, "pb_ratio": fmt_pb, "debt_ebitda": fmt_debt_ebitda,
@@ -102,14 +113,20 @@ def get_stock_data(symbol, period="6mo"):
         elif quote_type == 'ETF':
             mcap = info.get("totalAssets", 0)
             pe = info.get('trailingPE', 'N/A')
-            div = info.get("yield", 0) * 100 if info.get("yield") else 'N/A'
+            
+            div_raw = info.get("yield")
+            if isinstance(div_raw, (int, float)):
+                fmt_div = f"{div_raw:.2f}%" if div_raw > 1 else f"{div_raw * 100:.2f}%"
+            else:
+                fmt_div = "N/A"
+                
             beta = info.get('beta3Year', 'N/A')
             domain = info.get("fundFamily", "")
             
             res.update({
                 "mcap": f"${mcap/1e9:.2f}B" if mcap >= 1e9 else f"${mcap/1e6:.2f}M",
                 "pe": f"{pe:.2f}" if isinstance(pe, (int, float)) else "N/A",
-                "div": f"{div:.2f}%" if isinstance(div, (int, float)) else "N/A",
+                "div": fmt_div,
                 "beta": f"{beta:.2f}" if isinstance(beta, (int, float)) else "N/A",
                 "domain": domain, "website": "",
                 "rev_growth": "N/A", "roe": "N/A", "op_margin": "N/A", "dte": "N/A", "fcf": "N/A",
@@ -289,10 +306,21 @@ def get_alpha_vantage_data(symbol, api_key):
         data = resp.json()
         if "Symbol" not in data:
             return {"error": "Δεν βρέθηκαν δεδομένα ή εξαντλήθηκε το όριο κλήσεων."}
+            
+        av_div_raw = data.get("DividendYield", "N/A")
+        try:
+            if av_div_raw not in ["N/A", "None", None]:
+                av_div_val = float(av_div_raw)
+                av_div = f"{av_div_val:.2f}%" if av_div_val > 1 else f"{av_div_val * 100:.2f}%"
+            else:
+                av_div = "N/A"
+        except Exception:
+            av_div = str(av_div_raw)
+            
         return {
             "pe": data.get("PERatio", "N/A"),
             "eps": data.get("EPS", "N/A"),
-            "div": data.get("DividendYield", "N/A"),
+            "div": av_div,
             "target": data.get("AnalystTargetPrice", "N/A"),
             "52high": data.get("52WeekHigh", "N/A"),
             "52low": data.get("52WeekLow", "N/A")

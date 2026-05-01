@@ -1,8 +1,6 @@
-[🇬🇧 English](#-english-version) | [🇬🇷 Ελληνικά](#-ελληνική-έκδοση)
+# 📈 AI Stock Analyzer Desktop
 
----
-
-<h1 id="-ελληνική-έκδοση">📈 AI Stock Analyzer Desktop</h1>
+[🇬🇧 English](#-ai-stock-analyzer-desktop-english) | [🇬🇷 Ελληνικά](#-ai-stock-analyzer-desktop)
 
 Το **AI Stock Analyzer Desktop** είναι μια σύγχρονη Desktop εφαρμογή (Windows/macOS/Linux) γραμμένη σε Python, η οποία συνδυάζει **πραγματικά χρηματιστηριακά δεδομένα**, **τεχνικούς δείκτες** και **ειδήσεις**, χρησιμοποιώντας τη δύναμη της **Τεχνητής Νοημοσύνης (AI)** για την παραγωγή ολοκληρωμένων αναλύσεων μετοχών.
 
@@ -15,26 +13,22 @@
 ![Linux](https://img.shields.io/badge/Linux-FCC624?logo=linux&logoColor=black)
 ![UI](https://img.shields.io/badge/UI-CustomTkinter-1f538d)
 
-
-
 ---
 
 ## 📸 Στιγμιότυπα Οθόνης (Screenshots)
 
-<p align="center">
-  <img src="assets/main_dashboard.png" width="800" alt="Main Dashboard"><br>
-  <i>(Το κεντρικό περιβάλλον της εφαρμογής με γραφήματα, ειδήσεις και AI ανάλυση)</i>
-</p>
+![Main Dashboard](assets/main_dashboard.png)
 
-<p align="center">
-  <img src="assets/chart_view.png" width="390" alt="Αναλυτικό Γράφημα">
-  <img src="assets/ai_analysis.png" width="390" alt="AI Report">
-  <img src="assets/dashboard_en.png" width="390" alt="Dashboard">
-  <img src="assets/news.png" width="390" alt="News Feeds">
-  <img src="assets/sites.png" width="390" alt="Sites">
-</p>
+### Το κεντρικό περιβάλλον της εφαρμογής με γραφήματα, ειδήσεις και AI ανάλυση
+
+![Αναλυτικό Γράφημα](assets/chart_view.png)
+![AI Report](assets/ai_analysis.png)
+![Dashboard](assets/dashboard_en.png)
+![News Feeds](assets/news.png)
+![Sites](assets/sites.png)
 
 ## 🆕 Τι νέο υπάρχει στην έκδοση 1.4
+
 - **Εξαγωγή σε PDF**: Δυνατότητα απευθείας αποθήκευσης της αναφοράς AI σε μορφή PDF.
 - **Αυξομείωση Μεγέθους**: Νέα κουμπιά (+/-) για γρήγορη αλλαγή του μεγέθους κειμένου στο παράθυρο της ανάλυσης AI.
 - **Βελτιωμένο UI**: Χρήση της γραμματοσειράς `Segoe UI` για βελτιστοποιημένη απεικόνιση στα Ελληνικά, πιο μοντέρνα χρώματα επικεφαλίδων, και πιο καθαρό περιβάλλον με συμπτυγμένα (collapsed) τα δευτερεύοντα πλαίσια κατά την εκκίνηση.
@@ -69,6 +63,7 @@
 ## 🚀 Εγκατάσταση
 
 ### Προαπαιτούμενα
+
 - **Python 3.8** ή νεότερη έκδοση.
 - *(Προαιρετικά αλλά προτεινόμενα)* API Keys για το **Google Gemini**, **Alpha Vantage**, **Finnhub** και **NewsAPI.org**.
 - *(Προαιρετικά)* Εγκατεστημένο το Ollama αν θέλετε να τρέχετε μοντέλα τοπικά.
@@ -76,12 +71,14 @@
 ### Βήματα Εγκατάστασης
 
 1. **Κλωνοποίηση του αποθετηρίου:**
+
    ```bash
    git clone https://github.com/stratoslig/ai-stock-analyzer-Desktop.git
    cd ai-stock-analyzer-Desktop
    ```
 
 2. **Δημιουργία Εικονικού Περιβάλλοντος (Virtual Environment):**
+
    ```bash
    python -m venv venv
    # Ενεργοποίηση σε Windows:
@@ -91,6 +88,7 @@
    ```
 
 3. **Εγκατάσταση των απαραίτητων βιβλιοθηκών:**
+
    ```bash
    pip install -r requirements.txt
    ```
@@ -100,11 +98,12 @@
 ## 💻 Χρήση
 
 Για να ξεκινήσετε την εφαρμογή, τρέξτε:
+
 ```bash
 python desktop_app.py
 ```
 
-1. **Προσθήκη API Keys**: Από το αριστερό μενού (Πλευρική Μπάρα), εισάγετε τα API Keys σας και πατήστε "Αποθήκευση API Keys". 
+1. **Προσθήκη API Keys**: Από το αριστερό μενού (Πλευρική Μπάρα), εισάγετε τα API Keys σας και πατήστε "Αποθήκευση API Keys".
 2. **Watchlist**: Διαχειριστείτε (προσθήκη, επεξεργασία, προσωπικές σημειώσεις, διαγραφή, αναδιάταξη με βελάκια ⬆️/⬇️) τις μετοχές, τα ETFs και τους δείκτες σας, συμπεριλαμβάνοντας επιπλέον σύμβολα (π.χ. FT ή Investing.com).
 3. **Επιλογή Πηγών**: Στο κεντρικό παράθυρο, επιλέξτε τις πηγές δεδομένων (Alpha Vantage, Finnhub, NewsAPI.org), τις ειδήσεις, τον εταιρικό ιστότοπο ή τα δικά σας URLs. Μπορείτε να φιλτράρετε το NewsAPI ανά Λέξη-Κλειδί, Γλώσσα και Ημερομηνία.
 4. **RSS Feeds**: Προσθέστε URLs ως "RSS", εφαρμόστε φίλτρα και επιλέξτε τα επιθυμημένα άρθρα από το Tab "RSS Feeds" για να ενσωματωθούν στην ανάλυση.
@@ -113,6 +112,7 @@ python desktop_app.py
 ---
 
 ## 📂 Δομή του Project
+
 - `desktop_app.py`: Το κεντρικό αρχείο διεπαφής (GUI) με CustomTkinter και Matplotlib.
 - `stock_fetcher.py`: Διαχείριση δεδομένων, web scraping (εξαγωγή τιμών, ειδήσεων, URLs) και API (Yahoo, Alpha Vantage, Finnhub).
 - `ai_service.py`: Διαχείριση των LLMs (Google Gemini, Ollama) και παραγωγή της ανάλυσης.
@@ -122,12 +122,12 @@ python desktop_app.py
 - `architecture.md`: Λεπτομερής τεχνική περιγραφή της αρχιτεκτονικής του κώδικα.
 
 ---
+
 *⚠️ **Αποποίηση Ευθύνης**: Το λογισμικό αυτό προορίζεται αποκλειστικά για εκπαιδευτικούς και ενημερωτικούς σκοπούς. Σε καμία περίπτωση δεν αποτελεί επενδυτική ή οικονομική συμβουλή. Πάντα να κάνετε τη δική σας έρευνα (DYOR) πριν από κάθε επένδυση.*
 
 ---
----
 
-<h1 id="-english-version">📈 AI Stock Analyzer Desktop (English)</h1>
+## 📈 AI Stock Analyzer Desktop (English)
 
 **AI Stock Analyzer Desktop** is a modern Desktop application (Windows/macOS/Linux) written in Python that combines **real market data**, **technical indicators**, and **news**, leveraging the power of **Artificial Intelligence (AI)** to generate comprehensive stock analyses.
 
@@ -144,20 +144,18 @@ python desktop_app.py
 
 ## 📸 Screenshots
 
-<p align="center">
-  <img src="assets/main_dashboard.png" width="800" alt="Main Dashboard"><br>
-  <i>(The main interface with charts, news, and AI analysis)</i>
-</p>
+![Main Dashboard](assets/main_dashboard.png)
 
-<p align="center">
-  <img src="assets/chart_view.png" width="390" alt="Detailed Chart">
-  <img src="assets/ai_analysis.png" width="390" alt="AI Report">
-  <img src="assets/dashboard_en.png" width="390" alt="Dashboard">
-  <img src="assets/news.png" width="390" alt="News Feeds">
-  <img src="assets/sites.png" width="390" alt="Sites">
-</p>
+The main interface with charts, news, and AI analysis
+
+![Detailed Chart](assets/chart_view.png)
+![AI Report](assets/ai_analysis.png)
+![Dashboard](assets/dashboard_en.png)
+![News Feeds](assets/news.png)
+![Sites](assets/sites.png)
 
 ## 🆕 What's new in version 1.4
+
 - **PDF Export**: Direct export capability for the AI report to a PDF file format.
 - **Dynamic Text Size**: Added (+/-) buttons to instantly adjust the font size in the AI analysis box.
 - **UI Improvements**: Optimized font (`Segoe UI`) for better readability, new light blue header colors, and a cleaner startup screen with secondary panels collapsed by default.
@@ -192,6 +190,7 @@ python desktop_app.py
 ## 🚀 Installation & Setup
 
 ### Prerequisites
+
 - **Python 3.8** or newer.
 - *(Optional but recommended)* API Keys for **Google Gemini**, **Alpha Vantage**, **Finnhub**, and **NewsAPI.org**.
 - *(Optional)* Installed Ollama if you wish to run models locally.
@@ -199,12 +198,14 @@ python desktop_app.py
 ### Installation Steps
 
 1. **Clone the repository:**
+
    ```bash
    git clone https://github.com/stratoslig/ai-stock-analyzer-Desktop.git
    cd ai-stock-analyzer-Desktop
    ```
 
 2. **Create a Virtual Environment:**
+
    ```bash
    python -m venv venv
    # Activate on Windows:
@@ -214,6 +215,7 @@ python desktop_app.py
    ```
 
 3. **Install dependencies:**
+
    ```bash
    pip install -r requirements.txt
    ```
@@ -223,11 +225,12 @@ python desktop_app.py
 ## 💻 Usage
 
 To launch the application, run:
+
 ```bash
 python desktop_app.py
 ```
 
-1. **Add API Keys**: From the left menu (Sidebar), enter your API Keys and click "Save Keys". 
+1. **Add API Keys**: From the left menu (Sidebar), enter your API Keys and click "Save Keys".
 2. **Watchlist**: Manage (add, edit, personal notes, delete, reorder with ⬆️/⬇️ arrows) your stocks, ETFs, and indexes, including additional symbols (e.g. FT or Investing.com).
 3. **Select Sources**: In the main window, select the data sources (Alpha Vantage, Finnhub, NewsAPI.org), the news, the corporate site, or your own URLs. You can filter NewsAPI by Keyword, Language, and Date.
 4. **RSS Feeds**: Add URLs as "RSS", apply filters, and select the desired articles from the "RSS Feeds" Tab to include them in the analysis.
@@ -235,7 +238,8 @@ python desktop_app.py
 
 ---
 
-## � Project Structure
+## 📂 Project Structure
+
 - `desktop_app.py`: The main GUI file using CustomTkinter and Matplotlib.
 - `stock_fetcher.py`: Data management, web scraping (prices, news, URLs extraction) and APIs (Yahoo, Alpha Vantage, Finnhub).
 - `ai_service.py`: Management of LLMs (Google Gemini, Ollama) and generation of the analysis.
@@ -245,4 +249,5 @@ python desktop_app.py
 - `architecture.md`: Detailed technical description of the code architecture.
 
 ---
+
 *⚠️ **Disclaimer**: This software is intended strictly for educational and informational purposes. Under no circumstances does it constitute investment or financial advice. Always Do Your Own Research (DYOR) before making any investment.*

@@ -21,6 +21,7 @@ git checkout -b feature/your-feature-name
 At this point, you're ready to make your changes. Feel free to ask for help; everyone is a beginner at first 😸.
 
 **Coding Standards:**
+
 - **Language:** Python 3.8+
 - **UI Framework:** CustomTkinter. Try to follow the existing UI structure and Dark Theme patterns.
 - **Translations:** If you are adding new UI text, please make sure to add it to BOTH dictionaries (`en` and `el`) inside `translations.py`.
@@ -29,6 +30,7 @@ At this point, you're ready to make your changes. Feel free to ask for help; eve
 ## 4. Test your changes
 
 Make sure your changes do not break the existing application. Run `desktop_app.py` locally and verify that:
+
 - The application starts instantly.
 - API calls (Yahoo, Alpha Vantage, etc.) still work correctly.
 - AI generation (Gemini or Ollama) formats the response properly.
@@ -44,12 +46,14 @@ git push origin your-branch-name
 Go to the repository on GitHub and click the **Compare & pull request** button.
 
 ### Pull Request Guidelines
+
 - Keep your PRs small and focused on a single issue or feature.
 - Add a descriptive title and explain what your PR solves.
 - Mention if your PR closes an existing issue (e.g., `Closes #3`).
 
 ## 6. Code of Conduct
+
 Please note that this project is released with a Contributor Code of Conduct. By participating in this project you agree to abide by its terms. Be respectful, constructive, and kind!
 
 ---
-*Happy Coding! 🚀*
+Happy Coding! 🚀

@@ -71,7 +71,10 @@ def save_to_word(text, stock_name, file_path, chart_image=None, prices=None, sta
         if prices:
             try:
                 table = doc.add_table(rows=1, cols=2)
-                table.style = 'Table Grid'
+                try:
+                    table.style = 'Table Grid'
+                except Exception:
+                    pass
                 hdr_cells = table.rows[0].cells
                 hdr_cells[0].text = 'Πηγή (Source)'
                 hdr_cells[1].text = 'Τιμή (Price)'
@@ -92,7 +95,10 @@ def save_to_word(text, stock_name, file_path, chart_image=None, prices=None, sta
             try:
                 doc.add_heading('Βασικά Στατιστικά & Δείκτες Υγείας', level=3)
                 stats_table = doc.add_table(rows=1, cols=2)
-                stats_table.style = 'Table Grid'
+                try:
+                    stats_table.style = 'Table Grid'
+                except Exception:
+                    pass
                 hdr_cells_stats = stats_table.rows[0].cells
                 hdr_cells_stats[0].text = 'Δείκτης (Metric)'
                 hdr_cells_stats[1].text = 'Τιμή (Value)'
@@ -191,7 +197,7 @@ def save_to_pdf(text, stock_name, file_path, chart_image=None, prices=None, stat
     try:
         from docx2pdf import convert
     except ImportError:
-        return False, "Η βιβλιοθήκη docx2pdf δεν είναι εγκατεστημένη. Δοκιμάστε: pip install docx2pdf"
+        return False, "Η βιβλιοθήκη docx2pdf δεν βρέθηκε. Ανοίξτε τερματικό και γράψτε: pip install docx2pdf"
         
     fd, temp_docx = tempfile.mkstemp(suffix=".docx")
     os.close(fd)

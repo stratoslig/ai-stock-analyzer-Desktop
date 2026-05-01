@@ -1438,11 +1438,25 @@ class App(ctk.CTk):
             btn.pack(side="left", fill="x", expand=True)
 
     def load_history_item(self, item):
+        stock_name = item.get("stock", "")
+        
+        # Έλεγχος αν η μετοχή υπάρχει ακόμα στη Watchlist
+        watchlist_names = [w.get("Ονομασία") for w in self.user_data.get("watchlist", [])]
+        if stock_name in watchlist_names:
+            # Αυτόματη επιλογή της μετοχής και φόρτωση των δεδομένων της
+            self.stock_var.set(stock_name)
+            self.on_stock_select(stock_name)
+        else:
+            lang = self.user_data.get("language", "el")
+            warn_title = "Warning" if lang == "en" else "Προσοχή"
+            warn_msg = f"The stock '{stock_name}' is no longer in the Watchlist.\nThe analysis text was loaded, but charts and prices cannot be updated." if lang == "en" else f"Η μετοχή '{stock_name}' δεν υπάρχει πλέον στη Watchlist.\nΤο κείμενο της ανάλυσης φορτώθηκε, αλλά τα γραφήματα και οι τιμές δεν μπορούν να ανανεωθούν."
+            messagebox.showwarning(warn_title, warn_msg)
+
         self.result_textbox.delete("1.0", "end")
         self.result_textbox.insert("1.0", item.get("text", ""))
-        self.overview_title.configure(text=f"{item.get('stock', '')} - Ανάγνωση από Ιστορικό")
+        self.overview_title.configure(text=f"{stock_name} - Ανάγνωση από Ιστορικό")
         self.status_main.configure(text="✅ Φορτώθηκε από το ιστορικό", text_color="green")
-        self.current_analysis_stock = item.get("stock", "")
+        self.current_analysis_stock = stock_name
 
     def delete_history_item(self, item):
         history = self.user_data.get("history", [])
@@ -2686,11 +2700,14 @@ class App(ctk.CTk):
         if not stock_name or stock_name in [self.tr("choose_stock_default"), "Επίλεξε Μετοχή..."]:
             stock_name = "Άγνωστη_Μετοχή"
 
-        chart_stream = None
+        chart_path = None
         if hasattr(self, 'current_fig') and self.current_fig is not None:
-            import io
-            chart_stream = io.BytesIO()
             try:
+                import tempfile
+                import os
+                fd, chart_path = tempfile.mkstemp(suffix=".png")
+                os.close(fd)
+                
                 # --- Μετατροπή σε φωτεινό (λευκό) θέμα για την εξαγωγή ---
                 original_facecolor = self.current_fig.get_facecolor()
                 self.current_fig.set_facecolor('white')
@@ -2706,12 +2723,11 @@ class App(ctk.CTk):
                     legend = ax.get_legend()
                     if legend:
                         legend.get_frame().set_facecolor('white')
-                        for text in legend.get_texts():
-                            text.set_color('black')
+                        for leg_text in legend.get_texts():
+                            leg_text.set_color('black')
 
-                # Αποθήκευση με λευκό φόντο
-                self.current_fig.savefig(chart_stream, format='png', facecolor='white', bbox_inches='tight')
-                chart_stream.seek(0)
+                # Αποθήκευση με λευκό φόντο στο αρχείο
+                self.current_fig.savefig(chart_path, format='png', facecolor='white', bbox_inches='tight')
                 
                 # --- Επαναφορά στο σκοτεινό θέμα της εφαρμογής ---
                 self.current_fig.set_facecolor(original_facecolor)
@@ -2727,13 +2743,13 @@ class App(ctk.CTk):
                     legend = ax.get_legend()
                     if legend:
                         legend.get_frame().set_facecolor('#2b2b2b')
-                        for text in legend.get_texts():
-                            text.set_color('white')
+                        for leg_text in legend.get_texts():
+                            leg_text.set_color('white')
                 self.current_fig.canvas.draw_idle()
                 
             except Exception as e:
                 logger.error(f"Σφάλμα αποθήκευσης γραφήματος: {e}")
-                chart_stream = None
+                chart_path = None
 
         prices_dict = {
             "Yahoo Finance": self.l_yahoo.cget("text"),
@@ -2752,52 +2768,72 @@ class App(ctk.CTk):
             "Debt/Equity": self.l_dte.cget("text"),
             "Free Cash Flow": self.l_fcf.cget("text")
         }
-        return text, stock_name, chart_stream, prices_dict, stats_dict
+        return text, stock_name, chart_path, prices_dict, stats_dict
 
     def export_to_word(self):
         """Εξάγει το κείμενο της παραγόμενης ανάλυσης σε αρχείο μορφής MS Word (.docx)."""
-        text, stock_name, chart_stream, prices_dict, stats_dict = self._prepare_export_data()
+        text, stock_name, chart_path, prices_dict, stats_dict = self._prepare_export_data()
         if not text:
             self.status_main.configure(text="❌ Δεν υπάρχει κείμενο για εξαγωγή!", text_color="red")
             return
+            
+        import re
+        import os
+        safe_stock_name = re.sub(r'[\\/*?:"<>|]', "", stock_name).replace(' ', '_')
 
         file_path = filedialog.asksaveasfilename(
             defaultextension=".docx",
             filetypes=[("Word Document", "*.docx")],
             title="Αποθήκευση Ανάλυσης",
-            initialfile=f"Ανάλυση_{stock_name.replace(' ', '_')}.docx"
+            initialfile=f"Ανάλυση_{safe_stock_name}.docx"
         )
 
         if file_path:
-            success, error = document_exporter.save_to_word(text, stock_name, file_path, chart_image=chart_stream, prices=prices_dict, stats=stats_dict)
+            success, error = document_exporter.save_to_word(text, stock_name, file_path, chart_image=chart_path, prices=prices_dict, stats=stats_dict)
             if success:
                 self.status_main.configure(text="✅ Εξήχθη επιτυχώς σε Word!", text_color="green")
             else:
                 self.status_main.configure(text=f"❌ Σφάλμα κατά την εξαγωγή: {error}", text_color="red")
+                
+        if chart_path and os.path.exists(chart_path):
+            try:
+                os.remove(chart_path)
+            except Exception:
+                pass
 
     def export_to_pdf(self):
         """Εξάγει το κείμενο της παραγόμενης ανάλυσης σε αρχείο μορφής PDF (.pdf)."""
-        text, stock_name, chart_stream, prices_dict, stats_dict = self._prepare_export_data()
+        text, stock_name, chart_path, prices_dict, stats_dict = self._prepare_export_data()
         if not text:
             self.status_main.configure(text="❌ Δεν υπάρχει κείμενο για εξαγωγή!", text_color="red")
             return
+            
+        import re
+        import os
+        safe_stock_name = re.sub(r'[\\/*?:"<>|]', "", stock_name).replace(' ', '_')
             
         file_path = filedialog.asksaveasfilename(
             defaultextension=".pdf",
             filetypes=[("PDF Document", "*.pdf")],
             title="Αποθήκευση Ανάλυσης",
-            initialfile=f"Ανάλυση_{stock_name.replace(' ', '_')}.pdf"
+            initialfile=f"Ανάλυση_{safe_stock_name}.pdf"
         )
 
         if file_path:
             self.status_main.configure(text="⏳ Δημιουργία PDF... Παρακαλώ περιμένετε.", text_color="orange")
             self.update()
             
-            success, error = document_exporter.save_to_pdf(text, stock_name, file_path, chart_image=chart_stream, prices=prices_dict, stats=stats_dict)
+            success, error = document_exporter.save_to_pdf(text, stock_name, file_path, chart_image=chart_path, prices=prices_dict, stats=stats_dict)
             if success:
                 self.status_main.configure(text="✅ Εξήχθη επιτυχώς σε PDF!", text_color="green")
             else:
-                self.status_main.configure(text=f"❌ Σφάλμα κατά την εξαγωγή: {error}", text_color="red")
+                self.status_main.configure(text=f"❌ Σφάλμα PDF: Ελέγξτε αν έχετε εγκαταστήσει το 'docx2pdf'. Λεπτομέρειες: {error}", text_color="red")
+
+        if chart_path and os.path.exists(chart_path):
+            try:
+                os.remove(chart_path)
+            except Exception:
+                pass
 
     def print_analysis(self):
         """Στέλνει το κείμενο της ανάλυσης στον προεπιλεγμένο εκτυπωτή του συστήματος."""

@@ -6,6 +6,9 @@ import requests
 import feedparser
 from dateutil import parser as date_parser
 from datetime import datetime, timedelta, timezone
+import concurrent.futures
+import threading
+import urllib.parse
 
 logger = logging.getLogger(__name__)
 
@@ -187,7 +190,6 @@ def get_stock_news(query, symbols=None, max_results=10):
     if not query:
         return []
     try:
-        ddgs = DDGS()
         unique_results = []
         seen_urls = set()
         symbols = symbols or []
@@ -208,6 +210,8 @@ def get_stock_news(query, symbols=None, max_results=10):
         # Αφαίρεση πολύ μικρών λέξεων (αποφυγή false-positives), εκτός αν είναι σύμβολα
         target_keywords = {k for k in target_keywords if len(k) > 1}
 
+        lock = threading.Lock()
+
         def add_if_relevant(res_list):
             if not res_list: return
             for r in res_list:
@@ -217,49 +221,55 @@ def get_stock_news(query, symbols=None, max_results=10):
                 # Το όνομα της εταιρείας ή κάποιο σύμβολό της πρέπει να υπάρχει στον τίτλο ή στο σώμα
                 is_relevant = any(kw in title_body for kw in target_keywords)
                 
-                if url not in seen_urls and is_relevant:
-                    seen_urls.add(url)
-                    unique_results.append(r)
+                if is_relevant:
+                    with lock:
+                        if url not in seen_urls:
+                            seen_urls.add(url)
+                            unique_results.append(r)
 
         # 1. Αναζήτηση στα Ελληνικά (Μεγαλύτερο χρονικό εύρος 'y' λόγω μικρότερου όγκου ειδήσεων)
-        try:
-            gr_results = ddgs.news(f"{q_clean} μετοχή", region="gr-el", timelimit="y", max_results=max_results)
-            add_if_relevant(gr_results)
-            
-            # Αν δεν βρέθηκαν αρκετά ελληνικά άρθρα, κάνουμε ευρύτερη αναζήτηση
-            if len(unique_results) < 2:
-                gr_fallback = ddgs.news(q_clean, region="gr-el", timelimit="y", max_results=max_results)
-                add_if_relevant(gr_fallback)
-                
-            # Αναζήτηση με το σύμβολο (αν υπάρχει)
-            if len(unique_results) < 5 and symbols:
-                first_sym = symbols[0] if symbols[0] and symbols[0] != "N/A" else (symbols[1] if len(symbols)>1 and symbols[1] else "")
-                if first_sym:
-                    clean_sym = first_sym.split('.')[0] if '.' in first_sym else first_sym
-                    gr_sym_results = ddgs.news(f"{clean_sym} μετοχή", region="gr-el", timelimit="y", max_results=max_results)
-                    add_if_relevant(gr_sym_results)
-        except Exception:
-            pass
+        def search_gr():
+            try:
+                with DDGS() as ddgs:
+                    gr_results = ddgs.news(f"{q_clean} μετοχή", region="gr-el", timelimit="y", max_results=max_results)
+                    add_if_relevant(gr_results)
+                    
+                    if len(unique_results) < 2:
+                        gr_fallback = ddgs.news(q_clean, region="gr-el", timelimit="y", max_results=max_results)
+                        add_if_relevant(gr_fallback)
+                        
+                    if len(unique_results) < 5 and symbols:
+                        first_sym = symbols[0] if symbols[0] and symbols[0] != "N/A" else (symbols[1] if len(symbols)>1 and symbols[1] else "")
+                        if first_sym:
+                            clean_sym = first_sym.split('.')[0] if '.' in first_sym else first_sym
+                            gr_sym_results = ddgs.news(f"{clean_sym} μετοχή", region="gr-el", timelimit="y", max_results=max_results)
+                            add_if_relevant(gr_sym_results)
+            except Exception:
+                pass
             
         # 2. Αναζήτηση στα Αγγλικά (Επέκταση χρονικού περιθωρίου σε 'y' αντί για 'm')
-        try:
-            en_results = ddgs.news(f'"{q_clean}" stock OR earnings', region="wt-wt", timelimit="y", max_results=max_results)
-            add_if_relevant(en_results)
-            
-            # Αν βρήκαμε πολύ λίγα, κάνουμε μια ευρύτερη αναζήτηση (fallback)
-            if len(unique_results) < 6:
-                en_results_fallback = ddgs.news(f"{main_word} stock", region="wt-wt", timelimit="y", max_results=max_results)
-                add_if_relevant(en_results_fallback)
+        def search_en():
+            try:
+                with DDGS() as ddgs:
+                    en_results = ddgs.news(f'"{q_clean}" stock OR earnings', region="wt-wt", timelimit="y", max_results=max_results)
+                    add_if_relevant(en_results)
+                    
+                    if len(unique_results) < 6:
+                        en_results_fallback = ddgs.news(f"{main_word} stock", region="wt-wt", timelimit="y", max_results=max_results)
+                        add_if_relevant(en_results_fallback)
+                        
+                    if len(unique_results) < 10 and symbols:
+                        first_sym = symbols[0] if symbols[0] and symbols[0] != "N/A" else ""
+                        if first_sym:
+                            clean_sym = first_sym.split('.')[0] if '.' in first_sym else first_sym
+                            en_sym_results = ddgs.news(f"{clean_sym} stock", region="wt-wt", timelimit="y", max_results=max_results)
+                            add_if_relevant(en_sym_results)
+            except Exception:
+                pass
                 
-            # Αναζήτηση με το σύμβολο
-            if len(unique_results) < 10 and symbols:
-                first_sym = symbols[0] if symbols[0] and symbols[0] != "N/A" else ""
-                if first_sym:
-                    clean_sym = first_sym.split('.')[0] if '.' in first_sym else first_sym
-                    en_sym_results = ddgs.news(f"{clean_sym} stock", region="wt-wt", timelimit="y", max_results=max_results)
-                    add_if_relevant(en_sym_results)
-        except Exception:
-            pass
+        with concurrent.futures.ThreadPoolExecutor(max_workers=2) as executor:
+            executor.submit(search_gr)
+            executor.submit(search_en)
             
         # Ταξινόμηση ανά ημερομηνία (από το πιο πρόσφατο στο παλαιότερο)
         unique_results.sort(key=lambda x: x.get("date", ""), reverse=True)
@@ -391,7 +401,8 @@ def get_rss_news(feed_urls, keyword="", days_limit=None):
     articles = []
     now = datetime.now(timezone.utc)
     
-    for url in feed_urls:
+    def fetch_feed(url):
+        local_articles = []
         try:
             feed = feedparser.parse(url)
             for entry in feed.entries:
@@ -424,7 +435,7 @@ def get_rss_news(feed_urls, keyword="", days_limit=None):
                     except:
                         pass # Αν δεν μπορεί να διαβάσει την ημερομηνία, το κρατάμε
                         
-                articles.append({
+                local_articles.append({
                     "title": title,
                     "url": link,
                     "source": feed.feed.get("title", "RSS Feed"),
@@ -433,6 +444,86 @@ def get_rss_news(feed_urls, keyword="", days_limit=None):
                 })
         except Exception as e:
             logger.error(f"Σφάλμα ανάγνωσης RSS {url}: {e}")
+        return local_articles
             
-    # Ταξινόμηση ανά ημερομηνία (πρόχειρη)
+    with concurrent.futures.ThreadPoolExecutor(max_workers=5) as executor:
+        results = executor.map(fetch_feed, feed_urls)
+        for res in results:
+            articles.extend(res)
+            
+    # Ταξινόμηση ανά ημερομηνία (από το πιο πρόσφατο στο παλαιότερο)
+    articles.sort(key=lambda x: x.get("date", ""), reverse=True)
+    return articles
+
+def get_scraped_articles(urls, keyword="", limit=10, char_limit=250):
+    """Αντλεί άρθρα (τίτλους και links) από γενικές ιστοσελίδες (Web Scraping)."""
+    articles = []
+    
+    def fetch_site(url):
+        local_articles = []
+        try:
+            scraper = cloudscraper.create_scraper()
+            resp = scraper.get(url, timeout=15)
+            soup = BeautifulSoup(resp.text, 'html.parser')
+            base_url = "{0.scheme}://{0.netloc}".format(urllib.parse.urlsplit(url))
+            
+            seen_urls = set()
+            
+            # Εύρεση <a> tags που μοιάζουν με άρθρα (ικανοποιητικό μέγεθος τίτλου)
+            for a in soup.find_all('a', href=True):
+                title = a.get_text(separator=" ", strip=True)
+                link = a['href']
+                
+                if len(title) < 40:  # Αγνοούμε πολύ μικρούς τίτλους (π.χ. "Home", "Read more")
+                    continue
+                    
+                if not link.startswith('http'):
+                    link = urllib.parse.urljoin(base_url, link)
+                    
+                if link in seen_urls:
+                    continue
+                seen_urls.add(link)
+                
+                # Αναζήτηση περιγραφής (κοντινό <p> tag)
+                desc = ""
+                parent = a.find_parent(['div', 'article', 'li', 'section'])
+                if parent:
+                    p = parent.find('p')
+                    if p:
+                        p_text = p.get_text(separator=" ", strip=True)
+                        if p_text and p_text != title:
+                            desc = p_text[:char_limit] + "..." if len(p_text) > char_limit else p_text
+                            
+                # Φίλτρο λέξης-κλειδιού (όπως στο RSS)
+                if keyword:
+                    text_to_search = (title + " " + desc).lower()
+                    or_groups = [g.strip() for g in keyword.split(',')]
+                    match_found = False
+                    for group in or_groups:
+                        and_terms = [t.strip().lower() for t in group.split('+')]
+                        if all(term in text_to_search for term in and_terms):
+                            match_found = True
+                            break
+                    if not match_found:
+                        continue
+                        
+                local_articles.append({
+                    "title": title,
+                    "url": link,
+                    "source": base_url,
+                    "date": "", 
+                    "description": desc
+                })
+                
+                if len(local_articles) >= limit:
+                    break
+        except Exception as e:
+            logger.error(f"Σφάλμα scraping στο {url}: {e}")
+        return local_articles
+
+    with concurrent.futures.ThreadPoolExecutor(max_workers=5) as executor:
+        results = executor.map(fetch_site, urls)
+        for res in results:
+            articles.extend(res)
+            
     return articles

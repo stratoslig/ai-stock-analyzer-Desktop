@@ -8,6 +8,7 @@ import subprocess
 # Η παραμετροποίηση του build βρίσκεται πλέον εξ ολοκλήρου στο αρχείο desktop_app.spec
 
 def build_windows():
+    """Δημιουργεί το εκτελέσιμο και το πακέτο διανομής (.zip) για λειτουργικά συστήματα Windows."""
     print("🚀 Building for Windows (.exe) using .spec file...")
     print("⏳ Please wait, this may take 1-3 minutes.\n")
     
@@ -37,6 +38,7 @@ def build_windows():
     print(f"🎉 Final file '{zip_name}' is ready for GitHub upload!")
 
 def build_macos():
+    """Δημιουργεί την εφαρμογή και το πακέτο διανομής (.dmg) για λειτουργικά συστήματα macOS."""
     print("🚀 Building for macOS (.dmg) using .spec file...")
     print("⏳ Please wait, this may take 1-3 minutes.\n")
     
@@ -68,6 +70,7 @@ def build_macos():
         sys.exit(1)
 
 def build_linux():
+    """Δημιουργεί το εκτελέσιμο και το συμπιεσμένο αρχείο διανομής (.tar.gz) για Linux."""
     print("🚀 Building for Linux using .spec file...")
     print("⏳ Please wait, this may take 1-3 minutes.\n")
     

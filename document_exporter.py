@@ -22,7 +22,8 @@ def get_resource_path(relative_path):
         base_path = os.path.abspath(".")
     return os.path.join(base_path, relative_path)
 
-def save_to_word(text, stock_name, file_path):
+def save_to_word(text, stock_name, file_path, chart_image=None, prices=None, stats=None):
+    """Εξάγει το κείμενο της ανάλυσης σε έγγραφο Microsoft Word (.docx) διατηρώντας βασική μορφοποίηση."""
     try:
         # Δημιουργία νέου εγγράφου Word
         doc = docx.Document()
@@ -58,6 +59,54 @@ def save_to_word(text, stock_name, file_path):
         title = doc.add_heading(f'Ανάλυση: {stock_name}', level=0)
         title.alignment = WD_PARAGRAPH_ALIGNMENT.CENTER
         
+        if chart_image:
+            try:
+                img_para = doc.add_paragraph()
+                img_para.alignment = WD_PARAGRAPH_ALIGNMENT.CENTER
+                img_para.add_run().add_picture(chart_image, width=Inches(6.0))
+            except Exception as e:
+                logger.warning(f"Δεν ήταν δυνατή η προσθήκη του γραφήματος: {e}")
+                
+        # --- Πίνακας Τιμών ---
+        if prices:
+            try:
+                table = doc.add_table(rows=1, cols=2)
+                table.style = 'Table Grid'
+                hdr_cells = table.rows[0].cells
+                hdr_cells[0].text = 'Πηγή (Source)'
+                hdr_cells[1].text = 'Τιμή (Price)'
+                hdr_cells[0].paragraphs[0].runs[0].bold = True
+                hdr_cells[1].paragraphs[0].runs[0].bold = True
+                
+                for source, price in prices.items():
+                    if price and price.strip() and price not in ["---", "N/A", "Σφάλμα", "Φόρτωση..."]:
+                        row_cells = table.add_row().cells
+                        row_cells[0].text = source
+                        row_cells[1].text = price
+                doc.add_paragraph()
+            except Exception as e:
+                logger.warning(f"Δεν ήταν δυνατή η προσθήκη του πίνακα τιμών: {e}")
+
+        # --- Πίνακας Στατιστικών ---
+        if stats:
+            try:
+                doc.add_heading('Βασικά Στατιστικά & Δείκτες Υγείας', level=3)
+                stats_table = doc.add_table(rows=1, cols=2)
+                stats_table.style = 'Table Grid'
+                hdr_cells_stats = stats_table.rows[0].cells
+                hdr_cells_stats[0].text = 'Δείκτης (Metric)'
+                hdr_cells_stats[1].text = 'Τιμή (Value)'
+                hdr_cells_stats[0].paragraphs[0].runs[0].bold = True
+                hdr_cells_stats[1].paragraphs[0].runs[0].bold = True
+                for metric, value in stats.items():
+                    if value and value.strip() and value not in ["---", "N/A"]:
+                        row_cells = stats_table.add_row().cells
+                        row_cells[0].text = metric
+                        row_cells[1].text = value
+                doc.add_paragraph()
+            except Exception as e:
+                logger.warning(f"Δεν ήταν δυνατή η προσθήκη του πίνακα στατιστικών: {e}")
+
         # --- Ρύθμιση Βασικού Στυλ (Normal) ---
         style = doc.styles['Normal']
         font = style.font
@@ -134,3 +183,32 @@ def save_to_word(text, stock_name, file_path):
     except Exception as e:
         logger.error(f"Σφάλμα κατά την εξαγωγή Word: {e}", exc_info=True)
         return False, str(e)
+
+def save_to_pdf(text, stock_name, file_path, chart_image=None, prices=None, stats=None):
+    """Εξάγει το κείμενο σε PDF δημιουργώντας ένα προσωρινό αρχείο Word (απαιτεί docx2pdf και MS Word)."""
+    import tempfile
+    import os
+    try:
+        from docx2pdf import convert
+    except ImportError:
+        return False, "Η βιβλιοθήκη docx2pdf δεν είναι εγκατεστημένη. Δοκιμάστε: pip install docx2pdf"
+        
+    fd, temp_docx = tempfile.mkstemp(suffix=".docx")
+    os.close(fd)
+    
+    try:
+        success, error = save_to_word(text, stock_name, temp_docx, chart_image, prices, stats)
+        if not success:
+            return False, f"Σφάλμα δημιουργίας προσωρινού εγγράφου: {error}"
+            
+        convert(temp_docx, file_path)
+        return True, None
+    except Exception as e:
+        logger.error(f"Σφάλμα κατά την εξαγωγή PDF: {e}", exc_info=True)
+        return False, f"Απαιτείται εγκατεστημένο Microsoft Word. Λεπτομέρειες: {str(e)}"
+    finally:
+        if os.path.exists(temp_docx):
+            try:
+                os.remove(temp_docx)
+            except Exception:
+                pass

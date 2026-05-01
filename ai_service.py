@@ -12,6 +12,27 @@ def fetch_models(provider, api_key=None):
             client = genai.Client(api_key=api_key)
             models = [m.name for m in client.models.list() if "gemini" in m.name.lower()]
             return models if models else ["Κανένα διαθέσιμο μοντέλο"]
+        elif provider == "Ollama (Cloud)":
+            import ollama
+            if not api_key:
+                return ["Απαιτείται API Key / URL"]
+            try:
+                if api_key.startswith("http"):
+                    client = ollama.Client(host=api_key)
+                else:
+                    client = ollama.Client(
+                        host="https://ollama.com",
+                        headers={'Authorization': f'Bearer {api_key}'}
+                    )
+                resp = client.list()
+                if isinstance(resp, dict):
+                    models = [m.get("name", m.get("model")) for m in resp.get("models", [])]
+                else:
+                    models = [m.model for m in resp.models]
+                return models if models else ["Κανένα διαθέσιμο μοντέλο"]
+            except Exception as e:
+                logger.error(f"Σφάλμα φόρτωσης μοντέλων Ollama Cloud: {e}")
+                return ["Σφάλμα φόρτωσης"]
         else:
             import ollama
             resp = ollama.list()
@@ -49,6 +70,28 @@ def generate_analysis(provider, model, name, context, api_key=None, temperature=
                 config=genai.types.GenerateContentConfig(temperature=temperature)
             )
             return response.text, None
+        elif provider == "Ollama (Cloud)":
+            import ollama
+            if not api_key:
+                return None, "❌ Το Ollama Cloud URL / Key απουσιάζει. Πρόσθεσέ το στις ρυθμίσεις."
+            try:
+                if api_key.startswith("http"):
+                    client = ollama.Client(host=api_key)
+                else:
+                    client = ollama.Client(
+                        host="https://ollama.com",
+                        headers={'Authorization': f'Bearer {api_key}'}
+                    )
+                    
+                response = client.chat(
+                    model=model, 
+                    messages=[{'role': 'user', 'content': prompt}],
+                    options={'temperature': temperature}
+                )
+                return response['message']['content'], None
+            except Exception as e:
+                logger.error(f"Σφάλμα Ollama Cloud: {e}")
+                return None, f"❌ Σφάλμα AI: {e}"
         else:
             import ollama
             response = ollama.chat(

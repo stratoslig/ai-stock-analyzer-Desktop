@@ -13,3 +13,4 @@ PyPDF2
 trafilatura
 feedparser
 python-dateutil
+docx2pdf

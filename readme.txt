@@ -6,6 +6,11 @@
 όλες τις πληροφορίες που χρειάζεστε για να εγκαταστήσετε,
 να ρυθμίσετε και να χρησιμοποιήσετε την εφαρμογή.
 
+--- [ ΤΙ ΝΕΟ ΥΠΑΡΧΕΙ ΣΤΗΝ ΕΚΔΟΣΗ 1.4 ] -------------------
+- Νέα δυνατότητα εξαγωγής της Ανάλυσης AI απευθείας σε μορφή PDF.
+- Προσθήκη κουμπιών (+/-) για άμεση αλλαγή μεγέθους των γραμμάτων.
+- Εργονομικές βελτιώσεις: Καλύτερη Ελληνική γραμματοσειρά (Segoe UI), ομορφότερα χρώματα και πιο καθαρή αρχική οθόνη.
+
 --- [ 1. ΕΓΚΑΤΑΣΤΑΣΗ ] ------------------------------------
 Η εφαρμογή είναι "portable", δηλαδή δεν απαιτεί εγκατάσταση.
 
@@ -102,6 +107,11 @@ your PC". Αυτό είναι φυσιολογικό. Πατήστε "More info"
 
 Welcome to the AI Stock Analyzer! This document contains all
 the information you need to install, configure, and use the app.
+
+--- [ WHAT'S NEW IN VERSION 1.4 ] -------------------------
+- New feature to export the AI Analysis directly to PDF format.
+- Added (+/-) buttons to resize the text in the AI Analysis panel.
+- Ergonomic improvements: Better font rendering (Segoe UI), nicer header colors, and a cleaner default startup screen.
 
 --- [ 1. INSTALLATION ] -----------------------------------
 The application is "portable," meaning it requires no installation.

@@ -34,6 +34,11 @@
   <img src="assets/sites.png" width="390" alt="Sites">
 </p>
 
+## 🆕 Τι νέο υπάρχει στην έκδοση 1.4
+- **Εξαγωγή σε PDF**: Δυνατότητα απευθείας αποθήκευσης της αναφοράς AI σε μορφή PDF.
+- **Αυξομείωση Μεγέθους**: Νέα κουμπιά (+/-) για γρήγορη αλλαγή του μεγέθους κειμένου στο παράθυρο της ανάλυσης AI.
+- **Βελτιωμένο UI**: Χρήση της γραμματοσειράς `Segoe UI` για βελτιστοποιημένη απεικόνιση στα Ελληνικά, πιο μοντέρνα χρώματα επικεφαλίδων, και πιο καθαρό περιβάλλον με συμπτυγμένα (collapsed) τα δευτερεύοντα πλαίσια κατά την εκκίνηση.
+
 ## ✨ Κύρια Χαρακτηριστικά
 
 - **Πολυγλωσσικό Περιβάλλον (i18n)**: Πλήρης υποστήριξη Ελληνικών και Αγγλικών, τόσο στη διεπαφή (UI) όσο και στις παραγόμενες αναφορές του AI.
@@ -151,6 +156,11 @@ python desktop_app.py
   <img src="assets/news.png" width="390" alt="News Feeds">
   <img src="assets/sites.png" width="390" alt="Sites">
 </p>
+
+## 🆕 What's new in version 1.4
+- **PDF Export**: Direct export capability for the AI report to a PDF file format.
+- **Dynamic Text Size**: Added (+/-) buttons to instantly adjust the font size in the AI analysis box.
+- **UI Improvements**: Optimized font (`Segoe UI`) for better readability, new light blue header colors, and a cleaner startup screen with secondary panels collapsed by default.
 
 ## ✨ Key Features
 

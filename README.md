@@ -125,6 +125,8 @@ python desktop_app.py
 
 *⚠️ **Αποποίηση Ευθύνης**: Το λογισμικό αυτό προορίζεται αποκλειστικά για εκπαιδευτικούς και ενημερωτικούς σκοπούς. Σε καμία περίπτωση δεν αποτελεί επενδυτική ή οικονομική συμβουλή. Πάντα να κάνετε τη δική σας έρευνα (DYOR) πριν από κάθε επένδυση.*
 
+*⚖️ **Νομική Σημείωση**: Ο χρήστης είναι αποκλειστικά υπεύθυνος να ελέγχει αν επιτρέπεται το web scraping από τις ιστοσελίδες που αναλύει. Η εφαρμογή παρέχεται «ως έχει» και ο δημιουργός δεν φέρει καμία ευθύνη.*
+
 ---
 
 ## 📈 AI Stock Analyzer Desktop (English)
@@ -251,3 +253,5 @@ python desktop_app.py
 ---
 
 *⚠️ **Disclaimer**: This software is intended strictly for educational and informational purposes. Under no circumstances does it constitute investment or financial advice. Always Do Your Own Research (DYOR) before making any investment.*
+
+*⚖️ **Legal Notice**: The user is solely responsible for checking whether web scraping is permitted on the websites they analyze. The application is provided 'as is' and the creator bears no responsibility.*

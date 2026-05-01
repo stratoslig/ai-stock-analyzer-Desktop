@@ -479,7 +479,7 @@ class App(ctk.CTk):
     def show_about_window(self):
         about_win = ctk.CTkToplevel(self)
         about_win.title(self.tr("about_title"))
-        about_win.geometry("450x420")
+        about_win.geometry("450x490")
         about_win.resizable(False, False)
         
         def set_icon():
@@ -505,9 +505,12 @@ class App(ctk.CTk):
         ctk.CTkLabel(about_win, text=desc, wraplength=400, justify="center").pack(pady=10, padx=20)
 
         disclaimer = self.tr("about_disclaimer")
-        ctk.CTkLabel(about_win, text=disclaimer, wraplength=400, justify="center", font=ctk.CTkFont(size=11, slant="italic"), text_color="#d9534f").pack(pady=(10, 20))
+        ctk.CTkLabel(about_win, text=disclaimer, wraplength=400, justify="center", font=ctk.CTkFont(size=11, slant="italic"), text_color="#d9534f").pack(pady=(10, 5))
 
-        ctk.CTkButton(about_win, text=self.tr("close_btn"), command=about_win.destroy, width=100, fg_color="#444", hover_color="#555").pack(pady=(10, 20))
+        legal = f"⚖️ {self.tr('legal_notice_title')}: {self.tr('legal_notice_text')}"
+        ctk.CTkLabel(about_win, text=legal, wraplength=400, justify="center", font=ctk.CTkFont(size=11, slant="italic"), text_color="#d9534f").pack(pady=(5, 20))
+
+        ctk.CTkButton(about_win, text=self.tr("close_btn"), command=about_win.destroy, width=100, fg_color="#444", hover_color="#555").pack(pady=(0, 20))
 
     def tr(self, key):
         """Επιστρέφει τη μεταφρασμένη συμβολοσειρά για το δοσμένο κλειδί, βάσει της επιλεγμένης γλώσσας."""

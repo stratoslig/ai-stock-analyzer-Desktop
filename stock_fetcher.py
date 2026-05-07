@@ -9,6 +9,7 @@ from datetime import datetime, timedelta, timezone
 import concurrent.futures
 import threading
 import urllib.parse
+from translations import tr
 
 logger = logging.getLogger(__name__)
 
@@ -22,7 +23,7 @@ def get_stock_info(symbol):
         logger.error(f"Σφάλμα ανάκτησης πληροφοριών για {symbol}: {e}", exc_info=True)
         return None
 
-def get_stock_data(symbol, period="6mo"):
+def get_stock_data(symbol, period="6mo", lang="el"):
     """Αντλεί ιστορικά δεδομένα και υπολογίζει τους τεχνικούς δείκτες."""
     try:
         import yfinance as yf
@@ -33,7 +34,7 @@ def get_stock_data(symbol, period="6mo"):
         hist = ticker.history(period=period)
 
         if len(hist) == 0:
-            return {"error": "Δεν βρέθηκαν ιστορικά δεδομένα."}
+            return {"error": tr("err_no_hist_data", lang)}
 
         quote_type = info.get("quoteType")
 
@@ -156,9 +157,9 @@ def get_stock_data(symbol, period="6mo"):
         return res
     except Exception as e:
         logger.error(f"Σφάλμα λήψης ιστορικών δεδομένων {symbol}: {e}", exc_info=True)
-        return {"error": f"Σφάλμα δεδομένων: {e}"}
+        return {"error": tr("err_data", lang, e=str(e))}
 
-def get_ft_price(symbol):
+def get_ft_price(symbol, lang="el"):
     """Αντλεί την τρέχουσα τιμή από το Financial Times."""
     if not symbol:
         return "N/A"
@@ -174,9 +175,9 @@ def get_ft_price(symbol):
         return el.text.strip() if el else "N/A"
     except Exception as e:
         logger.error(f"Σφάλμα ανάκτησης FT για {symbol}: {e}")
-        return "Σφάλμα"
+        return tr("lbl_error", lang)
 
-def get_investing_price(symbol):
+def get_investing_price(symbol, lang="el"):
     """Αντλεί την τρέχουσα τιμή από το Investing.com."""
     if not symbol:
         return "N/A"
@@ -200,7 +201,7 @@ def get_investing_price(symbol):
         return el.text.strip() if el else "N/A"
     except Exception as e:
         logger.error(f"Σφάλμα ανάκτησης Investing για {symbol}: {e}")
-        return "Σφάλμα"
+        return tr("lbl_error", lang)
 
 def get_stock_news(query, symbols=None, max_results=10):
     """Αντλεί πρόσφατες ειδήσεις μέσω DuckDuckGo (Ελληνικά και Αγγλικά)."""
@@ -296,16 +297,16 @@ def get_stock_news(query, symbols=None, max_results=10):
         logger.error(f"Σφάλμα ανάκτησης ειδήσεων για {query}: {e}", exc_info=True)
         return []
 
-def get_alpha_vantage_data(symbol, api_key):
+def get_alpha_vantage_data(symbol, api_key, lang="el"):
     """Αντλεί θεμελιώδη δεδομένα από το Alpha Vantage."""
     if not api_key:
-        return {"error": "Missing API Key"}
+        return {"error": tr("err_api_missing", lang)}
     try:
         url = f"https://www.alphavantage.co/query?function=OVERVIEW&symbol={symbol}&apikey={api_key}"
         resp = requests.get(url, timeout=10)
         data = resp.json()
         if "Symbol" not in data:
-            return {"error": "Δεν βρέθηκαν δεδομένα ή εξαντλήθηκε το όριο κλήσεων."}
+            return {"error": tr("err_av_limit", lang)}
             
         av_div_raw = data.get("DividendYield", "N/A")
         try:
@@ -329,17 +330,17 @@ def get_alpha_vantage_data(symbol, api_key):
         logger.error(f"Σφάλμα Alpha Vantage: {e}")
         return {"error": str(e)}
 
-def get_finnhub_data(symbol, api_key):
+def get_finnhub_data(symbol, api_key, lang="el"):
     """Αντλεί δεδομένα πραγματικού χρόνου από το Finnhub."""
     if not api_key:
-        return {"error": "Missing API Key"}
+        return {"error": tr("err_api_missing", lang)}
     try:
         url = f"https://finnhub.io/api/v1/quote?symbol={symbol}&token={api_key}"
         resp = requests.get(url, timeout=10)
         data = resp.json()
         # Το Finnhub επιστρέφει 'c' για Current Price. Αν δεν υπάρχει, απέτυχε.
         if "c" not in data or data["c"] == 0:
-            return {"error": "Σφάλμα ανάκτησης Finnhub"}
+            return {"error": tr("err_fh_fetch", lang)}
         return {
             "current": data.get("c", "N/A"),
             "high": data.get("h", "N/A"),
@@ -351,10 +352,10 @@ def get_finnhub_data(symbol, api_key):
         logger.error(f"Σφάλμα Finnhub: {e}")
         return {"error": str(e)}
 
-def get_newsapi_data(query, api_key, extra_query="", language="", from_date=""):
+def get_newsapi_data(query, api_key, extra_query="", language="", from_date="", lang="el"):
     """Αντλεί ειδήσεις από το NewsAPI.org."""
     if not api_key:
-        return {"error": "Missing API Key"}
+        return {"error": tr("err_api_missing", lang)}
     try:
         # Το βασικό query (όνομα μετοχής) πρέπει πάντα να υπάρχει. Το βάζουμε σε uquotes για να είναι phrase.
         q_parts = [f'"{query}"']
@@ -381,7 +382,7 @@ def get_newsapi_data(query, api_key, extra_query="", language="", from_date=""):
         resp = requests.get(url, timeout=15)
         data = resp.json()
         if data.get("status") == "error":
-            return {"error": data.get("message", "Σφάλμα NewsAPI")}
+            return {"error": data.get("message", tr("err_newsapi", lang))}
         
         news_list = []
         for article in data.get("articles", []):
@@ -395,7 +396,7 @@ def get_newsapi_data(query, api_key, extra_query="", language="", from_date=""):
         return {"news": news_list}
     except requests.exceptions.Timeout:
         logger.error(f"Timeout NewsAPI για {query}")
-        return {"error": "Το NewsAPI άργησε να απαντήσει (Timeout). Δοκιμάστε ξανά."}
+        return {"error": tr("err_newsapi_timeout", lang)}
     except Exception as e:
         logger.error(f"Σφάλμα NewsAPI: {e}")
         return {"error": str(e)}

@@ -5,6 +5,7 @@ import tarfile
 import sys
 import subprocess
 
+from version import __version__
 # Η παραμετροποίηση του build βρίσκεται πλέον εξ ολοκλήρου στο αρχείο desktop_app.spec
 
 def build_windows():
@@ -23,7 +24,7 @@ def build_windows():
     app_dir = os.path.join('dist', 'AI Stock Analyzer Desktop')
     readme_path = 'readme.txt'
     
-    release_tag = os.environ.get('RELEASE_TAG', 'v1.4')
+    release_tag = os.environ.get('RELEASE_TAG', f'v{__version__}')
     zip_name = os.path.join('dist', f'AI_Stock_Analyzer_Pro_{release_tag}.zip')
     
     with zipfile.ZipFile(zip_name, 'w', zipfile.ZIP_DEFLATED) as zipf:
@@ -51,7 +52,7 @@ def build_macos():
     print("\n📦 Creating .dmg file...")
     
     app_path = os.path.join('dist', 'AI Stock Analyzer Desktop.app')
-    release_tag = os.environ.get('RELEASE_TAG', 'v1.4')
+    release_tag = os.environ.get('RELEASE_TAG', f'v{__version__}')
     dmg_name = f'AI_Stock_Analyzer_Pro_{release_tag}.dmg'
     dmg_path = os.path.join('dist', dmg_name)
     
@@ -85,7 +86,7 @@ def build_linux():
     app_dir = os.path.join('dist', 'AI Stock Analyzer Desktop')
     readme_path = 'readme.txt'
     
-    release_tag = os.environ.get('RELEASE_TAG', 'v1.4')
+    release_tag = os.environ.get('RELEASE_TAG', f'v{__version__}')
     tar_name = os.path.join('dist', f'AI_Stock_Analyzer_Pro_{release_tag}_Linux.tar.gz')
     
     with tarfile.open(tar_name, "w:gz") as tar:

@@ -1,21 +1,22 @@
 import logging
+from translations import tr
 
 logger = logging.getLogger(__name__)
 
-def fetch_models(provider, api_key=None):
+def fetch_models(provider, api_key=None, lang="el"):
     """Αντλεί τα διαθέσιμα μοντέλα ανάλογα με τον πάροχο."""
     try:
         if provider == "Gemini (Cloud)":
             import google.genai as genai
             if not api_key:
-                return ["Απαιτείται API Key"]
+                return [tr("err_req_api_key", lang)]
             client = genai.Client(api_key=api_key)
             models = [m.name for m in client.models.list() if "gemini" in m.name.lower()]
-            return models if models else ["Κανένα διαθέσιμο μοντέλο"]
+            return models if models else [tr("err_no_models", lang)]
         elif provider == "Ollama (Cloud)":
             import ollama
             if not api_key:
-                return ["Απαιτείται API Key / URL"]
+                return [tr("err_req_api_key_url", lang)]
             try:
                 if api_key.startswith("http"):
                     client = ollama.Client(host=api_key)
@@ -29,10 +30,10 @@ def fetch_models(provider, api_key=None):
                     models = [m.get("name", m.get("model")) for m in resp.get("models", [])]
                 else:
                     models = [m.model for m in resp.models]
-                return models if models else ["Κανένα διαθέσιμο μοντέλο"]
+                return models if models else [tr("err_no_models", lang)]
             except Exception as e:
                 logger.error(f"Σφάλμα φόρτωσης μοντέλων Ollama Cloud: {e}")
-                return ["Σφάλμα φόρτωσης"]
+                return [tr("err_load_models", lang)]
         else:
             import ollama
             resp = ollama.list()
@@ -40,10 +41,10 @@ def fetch_models(provider, api_key=None):
                 models = [m.get("name", m.get("model")) for m in resp.get("models", [])]
             else:
                 models = [m.model for m in resp.models]
-            return models if models else ["Κανένα διαθέσιμο μοντέλο"]
+            return models if models else [tr("err_no_models", lang)]
     except Exception as e:
         logger.error(f"Σφάλμα φόρτωσης μοντέλων ({provider}): {e}", exc_info=True)
-        return ["Σφάλμα φόρτωσης"]
+        return [tr("err_load_models", lang)]
 
 def generate_analysis(provider, model, name, context, api_key=None, temperature=0.7, extra_prompt="", lang="el"):
     """Εκτελεί την ανάλυση στο επιλεγμένο AI."""
@@ -61,7 +62,7 @@ def generate_analysis(provider, model, name, context, api_key=None, temperature=
         if provider == "Gemini (Cloud)":
             import google.genai as genai
             if not api_key:
-                return None, "❌ Το Gemini API Key απουσιάζει. Πρόσθεσέ το στις ρυθμίσεις."
+                return None, tr("err_miss_gemini", lang)
             
             client = genai.Client(api_key=api_key)
             response = client.models.generate_content(
@@ -73,7 +74,7 @@ def generate_analysis(provider, model, name, context, api_key=None, temperature=
         elif provider == "Ollama (Cloud)":
             import ollama
             if not api_key:
-                return None, "❌ Το Ollama Cloud URL / Key απουσιάζει. Πρόσθεσέ το στις ρυθμίσεις."
+                return None, tr("err_miss_ollama", lang)
             try:
                 if api_key.startswith("http"):
                     client = ollama.Client(host=api_key)
@@ -91,7 +92,7 @@ def generate_analysis(provider, model, name, context, api_key=None, temperature=
                 return response['message']['content'], None
             except Exception as e:
                 logger.error(f"Σφάλμα Ollama Cloud: {e}")
-                return None, f"❌ Σφάλμα AI: {e}"
+                return None, tr("err_ai", lang, e=str(e))
         else:
             import ollama
             response = ollama.chat(
@@ -102,4 +103,4 @@ def generate_analysis(provider, model, name, context, api_key=None, temperature=
             return response['message']['content'], None
     except Exception as e:
         logger.error(f"Σφάλμα AI κατά την ανάλυση ({provider} - {model}): {e}", exc_info=True)
-        return None, f"❌ Σφάλμα AI: {e}"
+        return None, tr("err_ai", lang, e=str(e))

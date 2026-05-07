@@ -1,3 +1,11 @@
+def tr(key, lang="el", **kwargs):
+    """Βοηθητική συνάρτηση μετάφρασης για αρχεία εκτός της κλάσης App."""
+    text = TRANSLATIONS.get(lang, TRANSLATIONS.get("el", {})).get(key, key)
+    if kwargs:
+        try: return text.format(**kwargs)
+        except KeyError: pass
+    return text
+
 TRANSLATIONS = {
     "el": {
         "ai_provider": "Πάροχος AI",
@@ -98,7 +106,7 @@ TRANSLATIONS = {
         "no_stocks_found": "Δεν υπάρχουν μετοχές",
         "about_btn": "ℹ️ Σχετικά",
         "about_title": "Σχετικά",
-        "about_version": "Έκδοση 1.4",
+        "about_version": "Έκδοση {version}",
         "about_creator": "Δημιουργός: Stratos Ligoudis",
         "about_desc": "Μια εφαρμογή που συνδυάζει πραγματικά χρηματιστηριακά δεδομένα, ειδήσεις και Τεχνητή Νοημοσύνη (Cloud & Τοπικά μοντέλα) για την παραγωγή ολοκληρωμένων αναλύσεων μετοχών.",
         "about_disclaimer": "⚠️ Αποποίηση Ευθύνης: Το λογισμικό προορίζεται αποκλειστικά για εκπαιδευτικούς σκοπούς και δεν αποτελεί επενδυτική συμβουλή.",
@@ -207,7 +215,40 @@ TRANSLATIONS = {
         "analysis_cancelled": "Η ανάλυση ακυρώθηκε από τον χρήστη.",
         "tt_rss_keyword": "Διαχωρίστε με κόμμα (,) για 'Ή' (OR).\nΔιαχωρίστε με συν (+) για 'ΚΑΙ' (AND).\nΠαράδειγμα: AAPL+earnings, MSFT",
         "update_title": "Νέα Έκδοση Διαθέσιμη!",
-        "update_msg": "Μια νέα έκδοση ({version}) είναι διαθέσιμη στο GitHub!\n\nΘέλετε να μεταβείτε στη σελίδα λήψης για να την κατεβάσετε;"
+        "update_msg": "Μια νέα έκδοση ({version}) είναι διαθέσιμη στο GitHub!\n\nΘέλετε να μεταβείτε στη σελίδα λήψης για να την κατεβάσετε?",
+        "system_header": "⚙️ Σύστημα",
+        "api_data_header": "🔌 Ενσωμάτωση Δεδομένων",
+        "prices_time_header": "Τιμές & Χρονικό Διάστημα",
+        "charts_sources_header": "Διαγράμματα & Πηγές",
+        "loading": "Φόρτωση...",
+        "paste_key_ph": "Επικόλληση κλειδιού...",
+        "paste_url_key_ph": "Επικόλληση URL/Κλειδιού...",
+        "title_ph": "Τίτλος",
+        "font_size": "Μέγεθος:",
+        "no_history": "Δεν υπάρχει ιστορικό αναλύσεων.",
+        "unknown": "Άγνωστο",
+        "chart_placeholder": "[Χώρος Γραφήματος Matplotlib]\nΤο γράφημα θα εμφανιστεί εδώ.",
+        "news_placeholder": "Οι ειδήσεις θα εμφανιστούν εδώ.",
+        "newsapi_placeholder": "Ενεργοποιήστε το NewsAPI αριστερά για προβολή.",
+        "links_placeholder": "Επιλέξτε μια μετοχή για να δείτε τους συνδέσμους.",
+        "search_recent_news": "Αναζήτηση στα πρόσφατα νέα...",
+        "search_newsapi": "Αναζήτηση στο NewsAPI...",
+        "search_results": "Αναζήτηση στα αποτελέσματα...",
+        "err_req_api_key": "Απαιτείται API Key",
+        "err_req_api_key_url": "Απαιτείται API Key / URL",
+        "err_no_models": "Κανένα διαθέσιμο μοντέλο",
+        "err_load_models": "Σφάλμα φόρτωσης",
+        "err_miss_gemini": "❌ Το Gemini API Key απουσιάζει. Πρόσθεσέ το στις ρυθμίσεις.",
+        "err_miss_ollama": "❌ Το Ollama Cloud URL / Key απουσιάζει. Πρόσθεσέ το στις ρυθμίσεις.",
+        "err_ai": "❌ Σφάλμα AI: {e}",
+        "err_no_hist_data": "Δεν βρέθηκαν ιστορικά δεδομένα.",
+        "err_data": "Σφάλμα δεδομένων: {e}",
+        "err_api_missing": "Missing API Key",
+        "err_av_limit": "Δεν βρέθηκαν δεδομένα ή εξαντλήθηκε το όριο κλήσεων.",
+        "err_fh_fetch": "Σφάλμα ανάκτησης Finnhub",
+        "err_newsapi_timeout": "Το NewsAPI άργησε να απαντήσει (Timeout). Δοκιμάστε ξανά.",
+        "err_newsapi": "Σφάλμα NewsAPI",
+        "lbl_error": "Σφάλμα"
     },
     "en": {
         "ai_provider": "AI Provider",
@@ -308,7 +349,7 @@ TRANSLATIONS = {
         "no_stocks_found": "No stocks found",
         "about_btn": "ℹ️ About",
         "about_title": "About",
-        "about_version": "Version 1.4",
+        "about_version": "Version {version}",
         "about_creator": "Creator: Stratos Ligoudis",
         "about_desc": "An application that combines real stock market data, news, and Artificial Intelligence (Cloud & Local models) to produce comprehensive stock analyses.",
         "about_disclaimer": "⚠️ Disclaimer: This software is intended for educational purposes only and does not constitute financial advice.",
@@ -417,6 +458,39 @@ TRANSLATIONS = {
         "analysis_cancelled": "Analysis cancelled by user.",
         "tt_rss_keyword": "Use comma (,) for 'OR'.\nUse plus (+) for 'AND'.\nExample: AAPL+earnings, MSFT",
         "update_title": "New Version Available!",
-        "update_msg": "A new version ({version}) is available on GitHub!\n\nWould you like to open the download page?"
+        "update_msg": "A new version ({version}) is available on GitHub!\n\nWould you like to open the download page?",
+        "system_header": "⚙️ System",
+        "api_data_header": "🔌 Data Integration",
+        "prices_time_header": "Prices & Timeframe",
+        "charts_sources_header": "Charts & Sources",
+        "loading": "Loading...",
+        "paste_key_ph": "Paste key...",
+        "paste_url_key_ph": "Paste URL/Key...",
+        "title_ph": "Title",
+        "font_size": "Size:",
+        "no_history": "No analysis history.",
+        "unknown": "Unknown",
+        "chart_placeholder": "[Matplotlib Chart Area]\nThe chart will appear here.",
+        "news_placeholder": "News will appear here.",
+        "newsapi_placeholder": "Enable NewsAPI on the left to view.",
+        "links_placeholder": "Select a stock to view links.",
+        "search_recent_news": "Search recent news...",
+        "search_newsapi": "Search in NewsAPI...",
+        "search_results": "Search in results...",
+        "err_req_api_key": "API Key required",
+        "err_req_api_key_url": "API Key / URL required",
+        "err_no_models": "No models available",
+        "err_load_models": "Loading error",
+        "err_miss_gemini": "❌ Gemini API Key is missing. Add it in settings.",
+        "err_miss_ollama": "❌ Ollama Cloud URL / Key is missing. Add it in settings.",
+        "err_ai": "❌ AI Error: {e}",
+        "err_no_hist_data": "No historical data found.",
+        "err_data": "Data error: {e}",
+        "err_api_missing": "Missing API Key",
+        "err_av_limit": "No data found or call limit exceeded.",
+        "err_fh_fetch": "Finnhub fetch error",
+        "err_newsapi_timeout": "NewsAPI response timeout. Please try again.",
+        "err_newsapi": "NewsAPI Error",
+        "lbl_error": "Error"
     }
 }
